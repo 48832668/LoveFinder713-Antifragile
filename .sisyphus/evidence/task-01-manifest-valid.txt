@@ -1,0 +1,4 @@
+=== manifest.json验证 ===
+manifest_version: 3
+name: Li元素计数器
+permissions: storage, notifications, activeTab

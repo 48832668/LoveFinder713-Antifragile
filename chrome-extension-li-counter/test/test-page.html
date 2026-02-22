@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>测试页面 - Chrome Extension Li Counter</title>
+  <style>
+    /* 基本样式，提升可读性 */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .ant-spin-container {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 12px 0;
+    }
+    li {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      background: #fafafa;
+      margin-bottom: 6px;
+      border-radius: 4px;
+    }
+    /* 按钮区域 */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-start;
+    }
+    button {
+      padding: 8px 12px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #f0f0f0;
+    }
+  </style>
+  <script>
+    // 内联 JS，使按钮具备最简单功能
+    // 说明：此脚本操作 .ant-spin-container 内的 ul/li
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始选择器
+      const ul = document.querySelector('#test-list');
+      // 添加新条目
+      document.getElementById('btn-add').onclick = function() {
+        const count = ul.children.length;
+        const li = document.createElement('li');
+        li.textContent = '新项目 ' + (count + 1);
+        ul.appendChild(li);
+      };
+      // 移除最后一个条目
+      document.getElementById('btn-remove').onclick = function() {
+        if (ul.children.length > 0) {
+          ul.removeChild(ul.lastElementChild);
+        }
+      };
+      // 清空所有条目
+      document.getElementById('btn-clear').onclick = function() {
+        ul.innerHTML = '';
+      };
+    });
+  </script>
+</head>
+<body>
+  <!-- 结构说明：.ant-spin-container 为测试目标容器，内部是一个 ul > li 的列表 -->
+  <div class="ant-spin-container">
+    <div style="margin-bottom:8px; color:#666; font-size:12px;">
+      说明：此页面用于 Chrome 扩展测试，目标结构为 .ant-spin-container > ul > li
+    </div>
+    <!-- ul 列表，包含若干 li 项 -->
+    <ul id="test-list">
+      <li>可见项 1</li>
+      <li>可见项 2</li>
+      <li>可见项 3</li>
+      <!-- 可根据需要扩展到 4-5 项的初始状态 -->
+      <li>可见项 4</li>
+      <li>可见项 5</li>
+    </ul>
+    <!-- 按钮行：增加、删除、清空 -->
+    <div class="btn-row" aria-label="操作按钮">
+      <button type="button" id="btn-add" title="添加一个新 li">添加 li</button>
+      <button type="button" id="btn-remove" title="移除最后一个 li">移除 li</button>
+      <button type="button" id="btn-clear" title="清空所有 li">清空</button>
+    </div>
+  </div>
+</body>
+</html>
