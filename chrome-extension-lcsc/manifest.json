@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "LCSC元器件详情读取器",
+  "version": "1.0.0",
+  "description": "读取立创商城元器件详情页信息并添加到ElecAntifreeze系统",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://item.szlcsc.com/*",
+    "http://localhost:11451/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://item.szlcsc.com/*.html*"],
+      "js": [
+        "Layer3_UI.js",
+        "content-script.js"
+      ],
+      "css": [
+        "content-style.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

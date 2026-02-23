@@ -1,0 +1,190 @@
+/**
+ * LCSC元器件详情读取器 - 样式文件
+ * 定义悬浮面板的样式
+ */
+
+/* ==================== 面板容器 ==================== */
+
+#layer3-ui-panel {
+  /* 基础样式 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  
+  /* 位置 - 默认右下角 */
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 400px;
+  max-height: 500px;
+  
+  /* 视觉效果 */
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  
+  /* 布局 */
+  z-index: 2147483647;
+  overflow: hidden;
+  display: none; /* 默认隐藏 */
+  
+  /* 动画 */
+  transition: all 0.3s ease;
+}
+
+/* 面板显示状态 */
+#layer3-ui-panel.show,
+#layer3-ui-panel:not([style*="display: none"]) {
+  display: block;
+}
+
+/* ==================== 面板内部 ==================== */
+
+/* 面板头部 */
+.lcsc-panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #eee;
+}
+
+.lcsc-panel .panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 收起按钮 */
+.lcsc-panel .panel-toggle {
+  padding: 4px 12px;
+  background: #666;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.lcsc-panel .panel-toggle:hover {
+  background: #444;
+}
+
+/* 面板内容 */
+.lcsc-panel .panel-content {
+ px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* 数据字段 padding: 16 */
+.lcsc-panel .data-field {
+  display: flex;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+
+.lcsc-panel .data-field label {
+  flex: 0 0 80px;
+  font-weight: 500;
+  color: #666;
+}
+
+.lcsc-panel .data-field span {
+  flex: 1;
+  word-break: break-all;
+}
+
+/* ==================== 按钮区域 ==================== */
+
+.lcsc-panel .panel-actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+/* 通用按钮样式 */
+.lcsc-panel button {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+/* 复制JSON按钮 */
+.lcsc-panel .btn-copy {
+  background: #2196F3;
+  color: #fff;
+}
+
+.lcsc-panel .btn-copy:hover {
+  background: #1976D2;
+}
+
+/* 添加到系统按钮 */
+.lcsc-panel .btn-add {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.lcsc-panel .btn-add:hover {
+  background: #388E3C;
+}
+
+/* 按钮禁用状态 */
+.lcsc-panel button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* ==================== 位置调整 ==================== */
+
+/* 左下角 */
+#layer3-ui-panel.position-bottom-left {
+  bottom: 20px;
+  left: 20px;
+  right: auto;
+}
+
+/* 右上角 */
+#layer3-ui-panel.position-top-right {
+  top: 20px;
+  right: 20px;
+  bottom: auto;
+}
+
+/* 左上角 */
+#layer3-ui-panel.position-top-left {
+  top: 20px;
+  left: 20px;
+  right: auto;
+  bottom: auto;
+}
+
+/* ==================== 响应式 ==================== */
+
+@media (max-width: 480px) {
+  #layer3-ui-panel {
+    width: calc(100% - 40px);
+    left: 20px;
+    right: 20px;
+  }
+}
+
+/* ==================== 调试样式 ==================== */
+
+/* 用于调试 - 高亮可选择元素 */
+.lcsc-highlight {
+  outline: 2px solid #f00 !important;
+  background: rgba(255, 0, 0, 0.1) !important;
+}
