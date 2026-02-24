@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antifragile-扩展设置</title>
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    body {
+      width: 420px;
+      min-height: 350px;
+      max-height: 550px;
+      overflow-y: auto;
+    }
+    .url-config-item {
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .field-config {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 0.25rem;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .json-textarea {
+      font-family: monospace;
+      font-size: 11px;
+      resize: vertical;
+      min-height: 120px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-2">
+    <h6 class="mb-2">
+      <i class="bi bi-gear"></i> Antifragile-悬浮工具栏设置
+    </h6>
+    
+    <!-- 当前页面URL -->
+    <div class="mb-2">
+      <label class="form-label small fw-bold">当前页面URL</label>
+      <div class="input-group input-group-sm">
+        <input type="text" id="currentUrl" class="form-control" readonly>
+        <button class="btn btn-outline-secondary" type="button" id="copyUrl" title="复制">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+    </div>
+
+    <hr class="my-2">
+    
+    <!-- 已配置的URL列表 -->
+    <div class="mb-2">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <label class="form-label small fw-bold mb-0">URL配置列表</label>
+        <button class="btn btn-success btn-sm" id="addUrlConfig">
+          <i class="bi bi-plus-lg"></i> 添加
+        </button>
+      </div>
+      
+      <div id="urlConfigList">
+        <!-- 动态生成的URL配置项 -->
+      </div>
+    </div>
+
+    <!-- 状态提示 -->
+    <div id="statusMessage" class="alert alert-success py-1 small d-none" role="alert">
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
