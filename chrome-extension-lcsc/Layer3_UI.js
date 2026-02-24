@@ -15,6 +15,7 @@
   console.log('%c========================================', 'color: green;');
   console.log('%c[LCSC读取器] 脚本已加载 v1.0.0', 'color: green; font-weight: bold; font-size: 16px;');
   console.log('%c当前页面: ' + window.location.href, 'color: blue;');
+  console.log('%c扩展正在运行中...', 'color: orange;');
   console.log('%c========================================', 'color: green;');
   
   // ==================== 配置 ====================
@@ -234,20 +235,28 @@
   
   async function init() {
     console.log('[LCSC读取器] 正在初始化...');
+    console.log('[LCSC读取器] 当前URL: ' + window.location.href);
     
     // 加载配置
     await loadConfigs();
     
     // 检查是否有匹配的URL配置
     if (!currentConfig) {
-      console.log('[LCSC读取器] 当前URL无匹配的URL配置，跳过');
-      console.log('[LCSC读取器] 当前URL: ' + window.location.href);
+      console.log('[LCSC读取器] 当前URL无匹配的URL配置，扩展未激活');
+      console.log('[LCSC读取器] 可用配置数量: ' + urlConfigs.length);
+      if (urlConfigs.length > 0) {
+        console.log('[LCSC读取器] 配置列表:');
+        urlConfigs.forEach((config, index) => {
+          console.log(`  ${index + 1}. ${config.urlPattern}`);
+        });
+      }
       return;
     }
     
     console.log('[LCSC读取器] URL匹配成功!');
+    console.log('[LCSC读取器] 匹配的配置: ' + currentConfig.urlPattern);
     
-    // 初始化UI
+  // 初始化UI
     initUI();
     
     // 等待页面渲染完成后解析一次
@@ -301,11 +310,11 @@
     
     const data = {
       name: null,           // 元件名称
-      manuModel: null,      // 商品型号
+      manuModel: null,      // 元件型号
       lcsc_no: null,        // 商品编号
-      package: null,        // 商品封装
+      package: null,        // 元件封装
       description: null,    // 描述
-      type: null,           // 商品目录/元件类型
+      type: null,           // 元件类型/元件类型
       price: null,          // 价格
       manuName: null,       // 制造商
       packing: null,        // 包装方式
@@ -336,13 +345,13 @@
     // --- 3. 制造商 (a标签) ---
     data.manuName = getXPathText('/html/body/div[1]/div/main/div/div/div/section[1]/div[2]/div[3]/dl/div[2]/dd/a');
     
-    // --- 4. 商品型号 ---
+    // --- 4. 元件型号 ---
     data.manuModel = getXPathText('/html/body/div[1]/div/main/div/div/div/section[1]/div[2]/div[3]/dl/div[3]/dd');
     
     // --- 5. 商品编号 ---
     data.lcsc_no = getXPathText('/html/body/div[1]/div/main/div/div/div/section[1]/div[2]/div[3]/dl/div[4]/dd');
     
-    // --- 6. 商品封装 ---
+    // --- 6. 元件封装 ---
     data.package = getXPathText('/html/body/div[1]/div/main/div/div/div/section[1]/div[2]/div[3]/dl/div[5]/dd');
     
     // --- 7. 包装方式 ---
@@ -362,8 +371,8 @@
           const attrName = cells[2]?.textContent?.trim();
           const attrValue = cells[3]?.textContent?.trim();
           
-          if (attrName && attrValue && attrName !== '商品目录') {
-            // 其他参数直接添加到根级别（排除商品目录，因为它已通过专用XPath提取）
+          if (attrName && attrValue && attrName !== '元件类型') {
+            // 其他参数直接添加到根级别（排除元件类型，因为它已通过专用XPath提取）
             data[attrName] = attrValue;
           }
         }
@@ -543,7 +552,7 @@
         </div>
         
         <div class="row mb-2">
-          <div class="col-4 text-muted small">商品型号</div>
+          <div class="col-4 text-muted small">元件型号</div>
           <div class="col-8">${escapeHtml(data.manuModel || '-')}</div>
         </div>
         
@@ -553,12 +562,12 @@
         </div>
         
         <div class="row mb-2">
-          <div class="col-4 text-muted small">商品封装</div>
+          <div class="col-4 text-muted small">元件封装</div>
           <div class="col-8">${escapeHtml(data.package || '-')}</div>
         </div>
         
         <div class="row mb-2">
-          <div class="col-4 text-muted small">商品目录</div>
+          <div class="col-4 text-muted small">元件类型</div>
           <div class="col-8">${escapeHtml(data.type || '-')}</div>
         </div>
         
@@ -671,7 +680,12 @@
         // 可以选择重新解析
         parseCurrentPage();
       });
+    } else if (message.type === 'lcsc_ping_test') {
+      console.log('[LCSC读取器] 收到Ping测试请求，当前URL:', window.location.href);
+      console.log('[LCSC读取器] 当前配置状态:', currentConfig ? '有匹配配置' : '无匹配配置');
+      sendResponse({ status: 'ok', url: window.location.href, configStatus: currentConfig ? 'matched' : 'no_match' });
     }
+    return true; // 保持消息通道开放
   });
   
   // ==================== 启动 ====================
@@ -685,3 +699,16 @@
   }
   
 })();
+  // Content script ping listener: respond to test ping from popup
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message && message.type === 'lcsc_ping_test') {
+          sendResponse({ status: 'ok' });
+          return true;
+        }
+      });
+    }
+  } catch (e) {
+    // 忽略监听失败
+  }

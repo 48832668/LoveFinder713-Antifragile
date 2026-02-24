@@ -10,10 +10,10 @@
     function extractSzlcscItemInfo() {
         // 定义基础信息字段配置 (键名已按新要求修改)
         const baseFieldConfig = [
-            { key: 'manuModel', label: '商品型号' },          // 原 manufacturerModel
+            { key: 'manuModel', label: '元件型号' },          // 原 manufacturerModel
             { key: 'name', label: '元件名称' },               // 保持不变
             { key: 'lcsc_no', label: '商品编号' },            // 原 lcscPartNumber
-            { key: 'package', label: '商品封装' },
+            { key: 'package', label: '元件封装' },
             { key: 'description', label: '描述' }
         ];
 
@@ -166,8 +166,8 @@
                             let attributeValue = valueElement.innerText.trim();
                             
                             if (attributeName && attributeValue) {
-                                // 特殊处理：商品目录 -> type
-                                if (attributeName === '商品目录') {
+                                // 特殊处理：元件类型 -> type
+                                if (attributeName === '元件类型') {
                                     result.type = attributeValue;
                                 } else {
                                     // 避免键名冲突
@@ -191,7 +191,7 @@
                                     const attributeName = parts[0].trim();
                                     const attributeValue = parts.slice(1).join(sep).trim();
                                     if (attributeName && attributeValue) {
-                                        if (attributeName === '商品目录') {
+                                        if (attributeName === '元件类型') {
                                             result.type = attributeValue;
                                         } else {
                                             let key = attributeName;

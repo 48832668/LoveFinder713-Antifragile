@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "LCSC元器件详情读取器",
-  "version": "1.0.0",
-  "description": "读取立创商城元器件详情页信息并添加到ElecAntifreeze系统",
+  "name": "LoveFinder713-Antifragile_电子元器件信息捕获",
+  "version": "26.2.24",
+  "description": "读取立创商城或者其他元器件商城的详情页信息并支持添加到LoveFinder704-ElecAntifreeze系统",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "LCSC 扩展"
+    "default_title": "Antifragile电子元器件信息捕获"
   },
   "permissions": [
     "storage",
