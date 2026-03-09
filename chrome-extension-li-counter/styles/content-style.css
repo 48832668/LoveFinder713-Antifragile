@@ -1,9 +1,0 @@
-/**
- * Content Script 样式文件
- * 用于悬浮UI的样式定义
- * 
- * 注意：实际样式在content-script.js中通过Shadow DOM注入
- * 此文件作为备用，确保扩展加载时不会报错
- */
-
-/* 占位文件，实际样式由Shadow DOM管理 */

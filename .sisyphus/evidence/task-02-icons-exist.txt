@@ -1,4 +1,0 @@
-chrome-extension-li-counter/icons/icon128.png
-chrome-extension-li-counter/icons/icon16.png
-chrome-extension-li-counter/icons/icon32.png
-chrome-extension-li-counter/icons/icon48.png

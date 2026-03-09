@@ -1,0 +1,1713 @@
+﻿<!doctype html>
+<html lang="zh-Hans">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>总线助手</title>
+	<link rel="stylesheet" href="/iframe/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/iframe/css/style.css">
+</head>
+<body>
+	<div class="container-fluid p-2">
+		<!-- 总线统计 -->
+		<div class="card mb-2">
+			<div class="card-header py-1 px-2" data-bs-toggle="collapse" data-bs-target="#statCollapse" style="cursor:pointer;">
+				<small class="fw-bold">📊 总线统计</small>
+			</div>
+			<div class="collapse show" id="statCollapse">
+				<div class="card-body py-2 px-2">
+					<div class="row g-2" id="statGrid">
+						<div class="col-12 text-center text-muted">
+							<div class="spinner-border spinner-border-sm me-1"></div>
+							<small>加载中...</small>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 创建新总线 -->
+		<div class="card mb-2">
+			<div class="card-header py-1 px-2" data-bs-toggle="collapse" data-bs-target="#createCollapse" style="cursor:pointer;">
+				<small class="fw-bold">➕ 创建新总线</small>
+			</div>
+			<div class="collapse show" id="createCollapse">
+				<div class="card-body py-2 px-2">
+					<div class="alert alert-info py-1 px-2 mb-2 small" id="progressAlert" style="display: none;">
+						<div class="spinner-border spinner-border-sm me-1"></div>
+						<span id="progressText">正在创建...</span>
+					</div>
+
+					<form id="createForm">
+						<div class="row g-2 mb-2">
+							<div class="col-5">
+								<label class="form-label small mb-0">总线类型</label>
+								<select class="form-select form-select-sm" id="busTypeSelect">
+									<option value="">选择类型...</option>
+								</select>
+							</div>
+							<div class="col-4">
+								<label class="form-label small mb-0">序号</label>
+								<input type="number" class="form-control form-control-sm" id="busIndexInput" value="1" min="1" max="99">
+							</div>
+							<div class="col-3">
+								<label class="form-label small mb-0">间距(mil)</label>
+								<input type="number" class="form-control form-control-sm" id="spacingInput" value="10" min="5" max="200" step="5">
+							</div>
+						</div>
+
+						<div class="mb-2" id="signalPreview" style="display: none;">
+							<label class="form-label small mb-1">网络标签预览</label>
+							<div id="signalList" class="signal-list"></div>
+						</div>
+
+						<div class="mb-2" id="delayInfo" style="display: none;">
+							<div class="alert alert-warning py-1 px-2 small mb-0">
+								⏱ <span id="delayCountdown">2</span> 秒后在鼠标位置创建...
+							</div>
+						</div>
+
+						<div class="row g-1 mb-1">
+							<div class="col-6">
+								<button type="submit" class="btn btn-primary btn-sm w-100" id="createBtn">
+									📍 固定位置
+								</button>
+							</div>
+							<div class="col-6">
+								<button type="button" class="btn btn-outline-primary btn-sm w-100" id="createDelayBtn">
+									⏱ 延时放置
+								</button>
+							</div>
+						</div>
+						<div class="row g-1">
+							<div class="col-6">
+								<button type="button" class="btn btn-outline-info btn-sm w-100" id="shortcutBtn" title="点击注册快捷键">
+									⌨ 注册快捷键
+								</button>
+							</div>
+							<div class="col-6">
+								<button type="button" class="btn btn-outline-secondary btn-sm w-100" id="refreshBtn" type="button">
+									🔄 刷新 <span id="refreshShortcutHint"></span>
+								</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- 已有总线 -->
+		<div class="card mb-2">
+			<div class="card-header py-1 px-2 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#busListCollapse" style="cursor:pointer;">
+				<small class="fw-bold">📋 已有总线</small>
+				<span class="collapse-icon">▼</span>
+			</div>
+			<div class="collapse show" id="busListCollapse">
+				<div class="card-body py-2 px-2">
+					<div class="mb-2 d-flex gap-2">
+						<input type="text" class="form-control form-control-sm flex-grow-1" id="busSearchInput" placeholder="搜索总线...">
+						<button class="btn btn-outline-secondary btn-sm" id="sortBtn" type="button" title="排序">↕️</button>
+					</div>
+					<div id="busListContainer">
+					<div class="text-center text-muted">
+						<div class="spinner-border spinner-border-sm me-1"></div>
+						<small>加载中...</small>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 已有元件 -->
+		<div class="card mb-2">
+			<div class="card-header py-1 px-2 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#compListCollapse" style="cursor:pointer;">
+				<small class="fw-bold">🔧 已有元件</small>
+				<span class="collapse-icon">▼</span>
+			</div>
+			<div class="collapse show" id="compListCollapse">
+				<div class="card-body py-2 px-2">
+					<div class="mb-2">
+						<input type="text" class="form-control form-control-sm" id="compSearchInput" placeholder="搜索元件...">
+					</div>
+					<div id="compListContainer">
+					<div class="text-center text-muted">
+						<div class="spinner-border spinner-border-sm me-1"></div>
+						<small>加载中...</small>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 总线详情模态框 -->
+	<div class="modal fade" id="busDetailModal" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered modal-lg">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h6 class="modal-title" id="modalTitle">总线详情</h6>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body" id="modalBody"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 元件详情模态框 -->
+	<div class="modal fade" id="compDetailModal" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered modal-lg">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h6 class="modal-title" id="compModalTitle">元件详情</h6>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body" id="compModalBody"></div>
+			</div>
+		</div>
+	</div>
+
+	<script src="/iframe/js/bootstrap.bundle.min.js"></script>
+	<script>
+		const edaApi = window.eda || window.parent?.eda || window.top?.eda;
+
+		// 配置存储键名
+		const STORAGE_KEY = 'mcu-bus-helper-settings';
+
+		// 前缀黑名单 - 禁止使用的前缀（保留用于特殊用途如电源网络）
+		const PREFIX_BLACKLIST = ['PW'];
+
+		/**
+		 * 检查前缀是否在黑名单中
+		 */
+		function isPrefixBlacklisted(prefix) {
+			const normalized = (prefix || '').toUpperCase().trim();
+			return PREFIX_BLACKLIST.includes(normalized);
+		}
+
+		/**
+		 * 获取黑名单提示消息
+		 */
+		function getBlacklistMessage() {
+			return `禁止使用的前缀：${PREFIX_BLACKLIST.join('、')}（保留用于特殊用途）`;
+		}
+
+		// 默认配置
+		const DEFAULT_SETTINGS = {
+			fixedX: 20,
+			fixedY: 20,
+			delaySeconds: 3,
+			wireSpacing: 10,
+			wireLength: 50,
+			wireDirection: 'right',
+			shortcutKey: '1',
+			refreshShortcutKey: 'R',
+			netPrefix: 'SYS',
+			historyPrefixes: [],
+			enabledHistoryPrefixes: [],
+			defaultBusType: 'I2C',
+			defaultBusIndex: 1
+		};
+
+		// 加载配置
+		function loadSettings() {
+			try {
+				const saved = localStorage.getItem(STORAGE_KEY);
+				if (saved) {
+					return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+				}
+			} catch (e) {
+				console.error('[配置] 加载失败:', e);
+			}
+			return { ...DEFAULT_SETTINGS };
+		}
+
+		// 保存配置
+		function saveSettings(settings) {
+			try {
+				localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+			} catch (e) {
+				console.error('[配置] 保存失败:', e);
+			}
+		}
+
+		// 默认总线配置
+		const DEFAULT_BUS_CONFIGS = [
+			{ name: 'I2C', presetName: 'I2C', labelId: 'I2C', prefix: '', signals: ['SDA', 'SCL'], color: '#0d6efd' },
+			{ name: 'SPI', presetName: 'SPI', labelId: 'SPI', prefix: '', signals: ['MOSI', 'MISO', 'SCK', 'CS'], color: '#198754' },
+			{ name: 'UART', presetName: 'UART', labelId: 'UART', prefix: '', signals: ['TX', 'RX'], color: '#ffc107' },
+			{ name: 'CAN', presetName: 'CAN', labelId: 'CAN', prefix: '', signals: ['CANH', 'CANL'], color: '#dc3545' },
+			{ name: 'SDIO', presetName: 'SDIO', labelId: 'SDIO', prefix: '', signals: ['CLK', 'CMD', 'D0', 'D1', 'D2', 'D3'], color: '#6f42c1' }
+		];
+
+		// 从配置加载总线配置
+		function getBusConfigs() {
+			const settings = loadSettings();
+			if (settings.busConfigs && settings.busConfigs.length > 0) {
+				// 兼容旧格式，转换为新格式
+				return settings.busConfigs.map(cfg => ({
+					name: cfg.name || cfg.type || 'UNKNOWN',
+					presetName: cfg.presetName || cfg.name || cfg.type || 'UNKNOWN',
+					labelId: cfg.labelId || cfg.name || cfg.type || 'UNKNOWN',
+					prefix: cfg.prefix || '',
+					signals: cfg.signals || [],
+					color: cfg.color || '#6c757d'
+				}));
+			}
+			return DEFAULT_BUS_CONFIGS;
+		}
+
+		// 获取网络标签前缀（全局默认前缀）
+		function getNetPrefix() {
+			const settings = loadSettings();
+			return settings.netPrefix || 'SYS';
+		}
+
+		// 获取历史前缀列表
+		function getHistoryPrefixes() {
+			const settings = loadSettings();
+			return settings.historyPrefixes || [];
+		}
+
+		// 保存历史前缀
+		function saveHistoryPrefix(prefix) {
+			if (!prefix) return;
+			const settings = loadSettings();
+			if (!settings.historyPrefixes) settings.historyPrefixes = [];
+			if (!settings.historyPrefixes.includes(prefix)) {
+				settings.historyPrefixes.push(prefix);
+				saveSettings(settings);
+			}
+		}
+
+		// 获取启用的前缀列表（包括当前前缀和勾选的历史前缀）
+		function getEnabledPrefixes() {
+			const settings = loadSettings();
+			const prefixes = [settings.netPrefix || 'SYS'];
+			if (settings.enabledHistoryPrefixes) {
+				settings.enabledHistoryPrefixes.forEach(p => {
+					if (!prefixes.includes(p)) prefixes.push(p);
+				});
+			}
+			return prefixes;
+		}
+
+		let BUS_CONFIGS = getBusConfigs();
+
+		let stats = {};
+		let buses = [];
+		let busComponents = {};
+		let allComponents = []; // 所有元件
+		let sortDescending = true;
+		let creating = false;
+		let busSearchText = ''; // 总线搜索文本
+		let compSearchText = ''; // 元件搜索文本
+
+		const $ = id => document.getElementById(id);
+		const busTypeSelect = $('busTypeSelect');
+		const busIndexInput = $('busIndexInput');
+		const spacingInput = $('spacingInput');
+		const signalPreview = $('signalPreview');
+		const signalList = $('signalList');
+		const createBtn = $('createBtn');
+		const createDelayBtn = $('createDelayBtn');
+		const shortcutBtn = $('shortcutBtn');
+		const delayInfo = $('delayInfo');
+		const delayCountdown = $('delayCountdown');
+		const statGrid = $('statGrid');
+		const busListContainer = $('busListContainer');
+		const compListContainer = $('compListContainer');
+		const refreshBtn = $('refreshBtn');
+		const sortBtn = $('sortBtn');
+		const progressAlert = $('progressAlert');
+		const progressText = $('progressText');
+		const busDetailModal = new bootstrap.Modal($('busDetailModal'));
+		const compDetailModal = new bootstrap.Modal($('compDetailModal'));
+
+		// 修复模态框焦点警告
+		$('busDetailModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
+		$('compDetailModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
+
+		function toast(msg, type = 'info') {
+			if (edaApi?.sys_Message) {
+				const t = { success: ESYS_ToastMessageType.SUCCESS, error: ESYS_ToastMessageType.ERROR, warning: ESYS_ToastMessageType.WARNING }[type] || ESYS_ToastMessageType.INFO;
+				try { edaApi.sys_Message.showToastMessage(msg, t, 3); } catch (e) {}
+			}
+		}
+
+		// 生成网络标签名称
+		// 格式: 
+		// - 无自定义前缀: {全局前缀}_{总线名称}{序号}_{信号}
+		// - 有自定义前缀: {自定义前缀}_{总线名称}{序号}_{信号}
+		function netName(busName, idx, sig) {
+			const cfg = BUS_CONFIGS.find(c => c.presetName === busName);
+			const globalPrefix = getNetPrefix();
+			// 如果总线有自定义前缀则完全替代全局前缀
+			const prefix = cfg?.prefix || globalPrefix;
+			// 使用 labelId 生成网络标签
+			const labelId = cfg?.labelId || cfg?.name || busName;
+			return `${prefix}_${labelId}${idx}_${sig}`;
+		}
+
+		// 解析网络标签名称
+		// 格式: {前缀}_{总线名称}{序号}_{信号}
+		function parseNetName(net) {
+			// 收集所有可能的前缀：全局前缀 + 历史前缀 + 所有总线的自定义前缀
+			const allPrefixes = new Set();
+			allPrefixes.add(getNetPrefix());
+			getEnabledPrefixes().forEach(p => allPrefixes.add(p));
+			BUS_CONFIGS.forEach(c => {
+				if (c.prefix) allPrefixes.add(c.prefix);
+			});
+
+			for (const prefix of allPrefixes) {
+				const regex = new RegExp(`^${prefix}_([A-Z0-9]+)(\\d+)_([A-Z0-9]+)$`);
+				const m = net.match(regex);
+				if (m) {
+					const busName = m[1];
+					// 通过 labelId 匹配总线名称
+					const cfg = BUS_CONFIGS.find(c => c.labelId === busName);
+					if (cfg && cfg.signals.includes(m[3])) {
+						return { type: cfg.presetName, idx: +m[2], signal: m[3] };
+					}
+				}
+			}
+			return null;
+		}
+
+		// 注册快捷键
+		function initShortcutKey() {
+			const settings = loadSettings();
+			const key = settings.shortcutKey || '1';
+			
+			console.log(`[总线助手] 在iframe中注册快捷键: ${key}`);
+			
+			try {
+				// 先注销
+				edaApi.sys_ShortcutKey.unregisterShortcutKey([key]);
+			} catch (e) {}
+			
+			// 注册快捷键（单键）
+			edaApi.sys_ShortcutKey.registerShortcutKey(
+				[key],
+				'在鼠标位置创建总线',
+				async () => {
+					console.log(`[总线助手] 快捷键 ${key} 被触发`);
+					await createBusAtMousePosition();
+				},
+				[ESYS_ShortcutKeyEffectiveEditorDocumentType.SCHEMATIC_PAGE],
+				[
+					ESYS_ShortcutKeyEffectiveEditorScene.NOT_SELECT_CANVAS,
+					ESYS_ShortcutKeyEffectiveEditorScene.DRAW,
+					ESYS_ShortcutKeyEffectiveEditorScene.EDITOR,
+					ESYS_ShortcutKeyEffectiveEditorScene.LOCAL,
+					ESYS_ShortcutKeyEffectiveEditorScene.PLACE,
+					ESYS_ShortcutKeyEffectiveEditorScene.SELECT_CANVAS
+				]
+			);
+			
+			console.log(`[总线助手] 快捷键 ${key} 注册完成`);
+			toast(`快捷键 ${key} 已注册`, 'success');
+		}
+
+		// 根据朝向计算导线坐标
+		function getWireCoords(x, y, index, spacing, length, direction) {
+			switch (direction) {
+				case 'left':
+					return [x, y + index * spacing, x - length, y + index * spacing];
+				case 'up':
+					return [x + index * spacing, y, x + index * spacing, y - length];
+				case 'down':
+					return [x + index * spacing, y, x + index * spacing, y + length];
+				case 'right':
+				default:
+					return [x, y + index * spacing, x + length, y + index * spacing];
+			}
+		}
+
+		// 根据导线方向计算网络标签旋转角度（标签朝向导线起点）
+		function getNetPortRotation(direction) {
+			switch (direction) {
+				case 'right': return 180; // 导线向右，标签朝左
+				case 'left': return 0;    // 导线向左，标签朝右
+				case 'down': return 270;  // 导线向下，标签朝上
+				case 'up': return 90;     // 导线向上，标签朝下
+				default: return 180;
+			}
+		}
+
+		// 在鼠标位置创建总线（快捷键调用）
+		async function createBusAtMousePosition() {
+			console.log('[总线助手] 开始创建总线...');
+			
+			const type = busTypeSelect.value;
+			const idx = +busIndexInput.value || 1;
+			
+			if (!type) {
+				toast('请先选择总线类型', 'warning');
+				return;
+			}
+
+			const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+			const settings = loadSettings();
+			const spacing = +spacingInput.value || settings.wireSpacing || 10;
+			const length = settings.wireLength || 50;
+			const direction = settings.wireDirection || 'right';
+			const netPortRotation = getNetPortRotation(direction);
+			
+			try {
+				const pos = await edaApi.sch_SelectControl.getCurrentMousePosition();
+				console.log('[总线助手] 鼠标位置:', pos);
+				
+				if (!pos) {
+					toast('无法获取鼠标位置', 'error');
+					return;
+				}
+				
+				const ids = [];
+				let ok = 0;
+				
+				for (let i = 0; i < cfg.signals.length; i++) {
+					const name = netName(type, idx, cfg.signals[i]);
+					try {
+						const coords = getWireCoords(pos.x, pos.y, i, spacing, length * 2, direction);
+						const w = await edaApi.sch_PrimitiveWire.create(coords, name);
+						if (w) {
+							ok++;
+							const pid = w.primitiveId || w.getState_PrimitiveId?.();
+							if (pid) ids.push(pid);
+						}
+					} catch (e) {
+						console.error('创建导线失败:', e);
+					}
+					await new Promise(r => setTimeout(r, 30));
+				}
+				
+				if (ids.length) {
+					try {
+						await edaApi.sch_SelectControl.clearSelected();
+						await edaApi.sch_SelectControl.doSelectPrimitives(ids);
+					} catch (e) {}
+				}
+				
+				toast(`创建 ${cfg.name}#${idx}，成功 ${ok}/${cfg.signals.length} 个`, ok === cfg.signals.length ? 'success' : 'warning');
+				await load();
+			} catch (e) {
+				console.error('创建总线失败:', e);
+				toast(`创建失败: ${e}`, 'error');
+			}
+		}
+
+		async function init() {
+			if (!edaApi) { toast('无法获取 EDA API', 'error'); return; }
+			try {
+				const doc = await edaApi.dmt_SelectControl.getCurrentDocumentInfo();
+				if (!doc || doc.documentType !== 1) { toast('请在原理图编辑器中使用', 'error'); return; }
+			} catch (e) {}
+			
+			// 页面加载时先注销快捷键，避免之前的注册残留
+			const initSettings = loadSettings();
+			const initKey = initSettings.shortcutKey || '1';
+			const initRefreshKey = initSettings.refreshShortcutKey || 'R';
+			try {
+				edaApi.sys_ShortcutKey.unregisterShortcutKey([initKey, initRefreshKey]);
+				console.log('[总线助手] 已注销残留的快捷键');
+			} catch (e) {}
+			
+			initSelect();
+			applySettings();
+			updateShortcutButtonHint();  // 更新快捷键按钮显示
+			updateRefreshShortcutHint();  // 更新刷新按钮快捷键提示
+			// 快捷键将在点击按钮时注册
+			await load();
+			toast('总线助手已启用', 'success');
+		}
+
+		function initSelect() {
+			busTypeSelect.innerHTML = '<option value="">选择类型...</option>';
+			BUS_CONFIGS.forEach(c => busTypeSelect.add(new Option(c.presetName, c.presetName)));
+		}
+
+		// 应用配置到界面
+		function applySettings() {
+			const settings = loadSettings();
+			// 设置默认值
+			busIndexInput.value = settings.defaultBusIndex;
+			spacingInput.value = settings.wireSpacing;
+			// 尝试设置总线类型（使用 presetName）
+			if (settings.defaultBusType) {
+				busTypeSelect.value = settings.defaultBusType;
+			}
+			updatePreview();
+		}
+
+		async function getComponentBusMapping(wires, accumulate = false) {
+			if (!accumulate) {
+				busComponents = {};
+				allComponents = [];
+			}
+
+			try {
+				const wireCoordMap = new Map();
+
+				if (wires && wires.length) {
+					for (const wire of wires) {
+						try {
+							const net = wire.net || wire.getState_Net?.() || '';
+							if (!net) continue;
+
+							const line = wire.line || wire.getState_Line?.();
+							const primitiveId = wire.primitiveId || wire.getState_PrimitiveId?.();
+
+							if (!line) continue;
+
+							if (Array.isArray(line)) {
+								if (typeof line[0] === 'number') {
+									for (let i = 0; i < line.length; i += 2) {
+										const key = `${line[i]},${line[i+1]}`;
+										wireCoordMap.set(key, { wire, primitiveId, net, line });
+									}
+								} else {
+									for (const pt of line) {
+										const key = `${pt[0]},${pt[1]}`;
+										wireCoordMap.set(key, { wire, primitiveId, net, line });
+									}
+								}
+							}
+						} catch (e) {}
+					}
+				}
+
+				const components = await edaApi.sch_PrimitiveComponent.getAll();
+				if (!components || !components.length) return;
+
+				for (const comp of components) {
+					try {
+						const designator = comp.getState_Designator?.() || comp.designator;
+						if (!designator) continue;
+
+						const compName = comp.manufacturerId || comp.getState_Name?.() || comp.name || '';
+						const pins = await edaApi.sch_PrimitiveComponent.getAllPinsByPrimitiveId(comp.primitiveId);
+						if (!pins || !pins.length) continue;
+
+						// 保存所有元件信息
+						const compInfo = {
+							designator,
+							name: compName,
+							primitiveId: comp.primitiveId,
+							pins: []
+						};
+
+						for (const pin of pins) {
+							const pinX = pin.getState_X?.() || pin.x;
+							const pinY = pin.getState_Y?.() || pin.y;
+							const pinName = pin.getState_PinName?.() || pin.pinName || '';
+							const pinNumber = pin.getState_PinNumber?.() || pin.pinNumber || '';
+							const pinRotation = pin.getState_Rotation?.() ?? pin.rotation ?? 0;
+
+							if (pinX === undefined || pinY === undefined) continue;
+
+							const key = `${pinX},${pinY}`;
+							const wireInfo = wireCoordMap.get(key);
+
+							const pinData = {
+								number: pinNumber,
+								name: pinName,
+								x: pinX,
+								y: pinY,
+								rotation: pinRotation,
+								net: wireInfo?.net || null,
+								wirePrimitiveId: wireInfo?.primitiveId,
+								wireLine: wireInfo?.line
+							};
+
+							compInfo.pins.push(pinData);
+
+							if (wireInfo) {
+								const parsed = parseNetName(wireInfo.net);
+								if (parsed) {
+									const busKey = `${parsed.type}_${parsed.idx}`;
+									if (!busComponents[busKey]) {
+										busComponents[busKey] = {};
+									}
+									if (!busComponents[busKey][designator]) {
+										busComponents[busKey][designator] = {
+											name: compName,
+											pins: []
+										};
+									}
+									busComponents[busKey][designator].pins.push({
+										...pinData,
+										wireLine: wireInfo.line
+									});
+								}
+							}
+						}
+
+						// 只保存引脚数>=4的元件
+						if (compInfo.pins.length >= 4) {
+							allComponents.push(compInfo);
+						}
+					} catch (e) {}
+				}
+			} catch (e) {
+				console.error('获取元件总线映射失败:', e);
+			}
+		}
+
+		async function load() {
+			try {
+				// 检查当前文档是否为原理图图页
+				const currentDoc = await edaApi.dmt_SelectControl.getCurrentDocumentInfo();
+				
+				let wires = [];
+				
+				// 只获取当前活动的原理图图页的导线
+				// documentType === 1 表示原理图图页
+				if (currentDoc && currentDoc.documentType === 1) {
+					// 获取当前原理图的所有图页信息
+					let allPages = [];
+					try {
+						allPages = await edaApi.dmt_Schematic.getCurrentSchematicAllSchematicPagesInfo() || [];
+						toast(`发现 ${allPages.length} 个图页`, 'info');
+					} catch (e) {
+						console.warn('获取所有图页信息失败:', e);
+						toast('获取图页信息失败: ' + e.message, 'error');
+						allPages = [];
+					}
+					
+					// 保存当前图页的 UUID
+					const currentPage = await edaApi.dmt_Schematic.getCurrentSchematicPageInfo();
+					const currentPageUuid = currentPage?.uuid;
+					toast(`当前图页: ${currentPage?.name || '未知'}`, 'info');
+					
+					// 初始化元件数据
+					busComponents = {};
+					allComponents = [];
+					let totalComponents = 0;
+
+					// 遍历所有图页获取导线和元件
+					for (const page of allPages) {
+						try {
+							toast(`正在处理图页: ${page.name}`, 'info');
+							// 如果不是当前图页，需要激活它
+							if (page.uuid !== currentPageUuid) {
+								// 使用 openDocument 激活图页（不会关闭其他图页）
+								await edaApi.dmt_EditorControl.openDocument(page.uuid);
+							}
+							// 获取该图页的导线
+							const pageWires = await edaApi.sch_PrimitiveWire.getAll() || [];
+							toast(`图页 ${page.name}: ${pageWires.length} 条导线`, 'info');
+							wires.push(...pageWires);
+							
+							// 获取该图页的元件（累积模式）
+							const prevCompCount = allComponents.length;
+							await getComponentBusMapping(pageWires, true);
+							const newCompCount = allComponents.length - prevCompCount;
+							totalComponents += newCompCount;
+							toast(`图页 ${page.name}: ${newCompCount} 个元件`, 'info');
+						} catch (e) {
+							console.warn(`获取图页 ${page.name} 的数据失败:`, e);
+							toast(`图页 ${page.name} 失败: ${e.message}`, 'error');
+						}
+					}
+					
+					// 恢复到原来的图页
+					if (currentPageUuid) {
+						try {
+							await edaApi.dmt_EditorControl.openDocument(currentPageUuid);
+							toast('已恢复原图页', 'info');
+						} catch (e) {
+							console.warn('恢复原图页失败:', e);
+							toast('恢复原图页失败', 'error');
+						}
+					}
+					
+					toast(`总计: ${wires.length} 条导线, ${totalComponents} 个元件`, 'success');
+				}
+
+				stats = {};
+				buses = [];
+				const map = new Map();
+				const seen = new Set();
+
+				(wires || []).forEach(w => {
+					try {
+						const net = w.net || '';
+						if (!net || seen.has(net)) return;
+						const parsed = parseNetName(net);
+						if (!parsed) return;
+						seen.add(net);
+						const key = `${parsed.type}_${parsed.idx}`;
+						if (!map.has(key)) map.set(key, { type: parsed.type, idx: parsed.idx, nets: [] });
+						map.get(key).nets.push(net);
+					} catch (e) {}
+				});
+
+				// 元件已在遍历图页时获取
+
+				map.forEach((b, key) => {
+					b.components = busComponents[key] ? Object.keys(busComponents[key]) : [];
+					buses.push(b);
+					stats[b.type] = (stats[b.type] || 0) + 1;
+				});
+
+				sortBuses();
+				renderStats();
+				renderBuses();
+				renderComponents();
+			} catch (e) {
+				console.error('加载失败:', e);
+				toast(`加载失败: ${e.message || e}`, 'error');
+			}
+		}
+
+		function sortBuses() {
+			buses.sort((a, b) => {
+				const countA = a.components?.length || 0;
+				const countB = b.components?.length || 0;
+				if (countA !== countB) {
+					return sortDescending ? countB - countA : countA - countB;
+				}
+				return a.type.localeCompare(b.type) || a.idx - b.idx;
+			});
+		}
+
+		function renderStats() {
+			statGrid.innerHTML = BUS_CONFIGS.map(c => `
+				<div class="col-4"><div class="stat-card" data-type="${c.presetName}" style="border-left: 3px solid ${c.color}">
+						<div class="fw-bold" style="color:${c.color}">${stats[c.presetName] || 0}</div>
+						<small class="text-muted">${c.presetName}</small>
+					</div>
+				</div>
+			`).join('');
+			statGrid.querySelectorAll('.stat-card').forEach(card => {
+				card.onclick = () => {
+					busTypeSelect.value = card.dataset.type;
+					busTypeSelect.dispatchEvent(new Event('change'));
+				};
+			});
+		}
+
+		function renderBuses() {
+			// 过滤总线
+			let filteredBuses = buses;
+			if (busSearchText) {
+				const searchLower = busSearchText.toLowerCase();
+				filteredBuses = buses.filter(b => {
+					const cfg = BUS_CONFIGS.find(c => c.presetName === b.type);
+					const busName = `${cfg?.presetName || b.type}#${b.idx}`.toLowerCase();
+					const nets = b.nets.join(' ').toLowerCase();
+					const comps = (b.components || []).join(' ').toLowerCase();
+					return busName.includes(searchLower) || nets.includes(searchLower) || comps.includes(searchLower);
+				});
+			}
+
+			if (!filteredBuses.length) {
+				busListContainer.innerHTML = '<div class="text-center text-muted py-2"><small>' + (busSearchText ? '无匹配结果' : '暂无总线') + '</small></div>';
+				return;
+			}
+			busListContainer.innerHTML = filteredBuses.map(b => {
+				const cfg = BUS_CONFIGS.find(c => c.presetName === b.type);
+				const compCount = b.components?.length || 0;
+				// 完善 3：无元件连接红色警告，只有一个元件黄色警告
+				let borderStyle = '';
+				let warningIcon = '';
+				if (compCount === 0) {
+					borderStyle = 'border: 2px solid #dc3545;';
+					warningIcon = '⚠️ ';
+				} else if (compCount === 1) {
+					borderStyle = 'border: 2px solid #ffc107;';
+					warningIcon = '⚡ ';
+				}
+				return `
+					<div class="bus-item card mb-2" data-bus-key="${b.type}_${b.idx}" style="cursor:pointer;${borderStyle}">
+						<div class="card-body py-2 px-2">
+							<div class="d-flex justify-content-between align-items-center">
+								<span class="fw-bold" style="color:${cfg?.color}">${warningIcon}${cfg?.presetName || b.type}#${b.idx}</span>
+								<span class="badge bg-secondary">${b.nets.length} 网络${compCount ? ` · ${compCount} 元件` : ''}</span>
+							</div>
+							<div class="mt-1">
+								${b.nets.map(n => `<span class="badge bg-light text-dark border me-1 small">${n}</span>`).join('')}
+							</div>
+							${compCount ? `<small class="text-success mt-1 d-block">🔌 ${b.components.join(', ')}</small>` : ''}
+						</div>
+					</div>
+				`;
+			}).join('');
+
+			busListContainer.querySelectorAll('.bus-item').forEach(item => {
+				item.onclick = () => showBusDetail(item.dataset.busKey);
+			});
+		}
+
+		function renderComponents() {
+			// 过滤元件
+			let filteredComps = allComponents;
+			if (compSearchText) {
+				const searchLower = compSearchText.toLowerCase();
+				filteredComps = allComponents.filter(comp => {
+					const designator = comp.designator.toLowerCase();
+					const name = (comp.name || '').toLowerCase();
+					const buses = (comp.connectedBuses || []).map(b => {
+						const cfg = BUS_CONFIGS.find(c => c.presetName === b.type);
+						return `${cfg?.presetName || b.type}#${b.idx}`;
+					}).join(' ').toLowerCase();
+					return designator.includes(searchLower) || name.includes(searchLower) || buses.includes(searchLower);
+				});
+			}
+
+			if (!filteredComps.length) {
+				compListContainer.innerHTML = '<div class="text-center text-muted py-2"><small>' + (compSearchText ? '无匹配结果' : '暂无元件（引脚数≥4）') + '</small></div>';
+				return;
+			}
+
+			// 按总线数量排序
+			filteredComps.sort((a, b) => {
+				const busCountA = a.connectedBuses?.length || 0;
+				const busCountB = b.connectedBuses?.length || 0;
+				return busCountB - busCountA;
+			});
+
+			compListContainer.innerHTML = filteredComps.map(comp => {
+				// 计算连接的总线
+				const connectedBuses = [];
+				const busMap = new Map();
+				const busSignalsMap = new Map(); // 记录每个总线使用的信号
+
+				comp.pins.forEach(pin => {
+					if (pin.net) {
+						const parsed = parseNetName(pin.net);
+						if (parsed) {
+							const key = `${parsed.type}_${parsed.idx}`;
+							if (!busMap.has(key)) {
+								busMap.set(key, { type: parsed.type, idx: parsed.idx });
+								busSignalsMap.set(key, new Set());
+							}
+							busSignalsMap.get(key).add(parsed.signal);
+						}
+					}
+				});
+
+				busMap.forEach(bus => {
+					bus.usedSignals = Array.from(busSignalsMap.get(`${bus.type}_${bus.idx}`) || []);
+					connectedBuses.push(bus);
+				});
+				comp.connectedBuses = connectedBuses;
+
+				return `
+					<div class="comp-item card mb-2" data-designator="${comp.designator}" style="cursor:pointer;">
+						<div class="card-body py-2 px-2">
+							<div class="d-flex justify-content-between align-items-center">
+								<div>
+									<small class="text-muted">${comp.name}</small>
+									<small class="fw-bold ms-1">${comp.designator}</small>
+								</div>
+								<span class="badge bg-primary">${connectedBuses.length} 总线</span>
+							</div>
+							${connectedBuses.length > 0 ? `
+								<div class="mt-1">
+									${connectedBuses.map(bus => {
+										const cfg = BUS_CONFIGS.find(c => c.presetName === bus.type);
+										const allSignals = cfg?.signals || [];
+										const usedSignals = bus.usedSignals || [];
+										const missingSignals = allSignals.filter(s => !usedSignals.includes(s));
+
+										let missingText = '';
+										if (missingSignals.length > 0) {
+											if (missingSignals.length > allSignals.length / 2) {
+												// 缺的多：显示"仅使用XX"
+												missingText = `<span class="badge bg-warning text-dark ms-1" title="缺失: ${missingSignals.join(', ')}">仅${usedSignals.join('+')}</span>`;
+											} else {
+												// 缺的少：显示"无XXX"
+												missingText = `<span class="badge bg-secondary ms-1" title="未使用">无${missingSignals.join('/')}</span>`;
+											}
+										}
+
+										return `<span class="badge me-1" style="background:${cfg?.color || '#6c757d'}">${cfg?.name || bus.type}#${bus.idx}</span>${missingText}`;
+									}).join('')}
+								</div>
+							` : ''}
+						</div>
+					</div>
+				`;
+			}).join('');
+
+			compListContainer.querySelectorAll('.comp-item').forEach(item => {
+				item.onclick = () => showCompDetail(item.dataset.designator);
+			});
+		}
+
+		function showBusDetail(busKey) {
+			const [type, idx] = busKey.split('_');
+			const currentIdx = parseInt(idx);
+			const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+			const bus = buses.find(b => b.type === type && b.idx === currentIdx);
+			const comps = busComponents[busKey] || {};
+
+			const sameTypeBuses = buses.filter(b => b.type === type && b.idx !== currentIdx);
+			const availableIndices = sameTypeBuses.map(b => b.idx);
+
+			$('modalTitle').innerHTML = `<span style="color:${cfg?.color}">${cfg?.name}#${currentIdx}</span> 详情`;
+
+			let bodyHtml = `
+				<div class="mb-3">
+					<h6 class="text-muted small">网络标签</h6>
+					<div>${bus?.nets.map(n => `<span class="badge bg-primary me-1">${n}</span>`).join('') || '无'}</div>
+				</div>
+			`;
+
+			if (Object.keys(comps).length) {
+				bodyHtml += `<h6 class="text-muted small">连接的元件 (${Object.keys(comps).length})</h6>`;
+				bodyHtml += '<div class="list-group">';
+
+				for (const [designator, info] of Object.entries(comps)) {
+					const compId = `comp_${designator.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+					let channelBtnsHtml = '';
+					if (availableIndices.length) {
+						channelBtnsHtml = availableIndices.map(i =>
+							`<button type="button" class="btn btn-outline-secondary btn-sm channel-btn" data-comp-id="${compId}" data-target-idx="${i}">${cfg?.name}#${i}</button>`
+						).join('');
+					} else {
+						channelBtnsHtml = '<span class="text-muted small">无其他可用通道</span>';
+					}
+
+					bodyHtml += `
+						<div class="list-group-item py-2" id="${compId}">
+							<div class="d-flex justify-content-between align-items-center">
+								<div>
+									<small class="text-muted">${info.name}</small>
+									<span class="fw-bold ms-2">${designator}</span>
+								</div>
+								<button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 toggle-btn" data-comp-id="${compId}">
+									调整通道
+								</button>
+							</div>
+							<div class="mt-1">
+								${info.pins.map(p => `
+									<span class="badge bg-light text-dark border me-1 mb-1 small">
+										${p.number ? `Pin${p.number}` : ''} ${p.name} → ${p.net}
+									</span>
+								`).join('')}
+							</div>
+							<div class="channel-selector mt-2" id="${compId}_selector" style="display:none;">
+								<div class="alert alert-info py-1 px-2 small mb-1">
+									选择目标通道（仅限 ${cfg?.name} 类型）:
+								</div>
+								<div class="d-flex flex-wrap gap-1 mb-2 channel-btns">
+									${channelBtnsHtml}
+									<button type="button" class="btn btn-outline-secondary btn-sm channel-btn" data-comp-id="${compId}" data-target-idx="new">新通道</button>
+								</div>
+								<div class="d-flex gap-1 align-items-center" id="${compId}_actions" style="display:none;">
+									<input type="number" class="form-control form-control-sm" id="${compId}_newIdx" placeholder="新序号" min="1" max="99" style="width:100px;display:none;">
+									<button type="button" class="btn btn-primary btn-sm apply-btn" data-bus-key="${busKey}" data-designator="${designator}" data-comp-id="${compId}" data-bus-type="${type}">
+										立即更改
+									</button>
+									<button type="button" class="btn btn-secondary btn-sm cancel-btn" data-comp-id="${compId}">
+										取消
+									</button>
+								</div>
+							</div>
+						</div>
+					`;
+				}
+				bodyHtml += '</div>';
+			} else {
+				bodyHtml += `<div class="alert alert-warning py-2 small">暂无元件连接到此总线</div>`;
+			}
+
+			$('modalBody').innerHTML = bodyHtml;
+			bindModalEvents(busKey, type, cfg);
+			busDetailModal.show();
+		}
+
+		function bindModalEvents(busKey, busType, cfg) {
+			document.querySelectorAll('.toggle-btn').forEach(btn => {
+				btn.addEventListener('click', function() {
+					const compId = this.dataset.compId;
+					const selector = document.getElementById(`${compId}_selector`);
+					if (selector) {
+						selector.style.display = selector.style.display === 'none' ? 'block' : 'none';
+					}
+				});
+			});
+
+			document.querySelectorAll('.channel-btn').forEach(btn => {
+				btn.addEventListener('click', function() {
+					const compId = this.dataset.compId;
+					const targetIdx = this.dataset.targetIdx;
+
+					const newIdxInput = document.getElementById(`${compId}_newIdx`);
+					const actionsDiv = document.getElementById(`${compId}_actions`);
+
+					if (!newIdxInput || !actionsDiv) return;
+
+					if (targetIdx === 'new') {
+						newIdxInput.style.display = 'block';
+						newIdxInput.value = '';
+						newIdxInput.focus();
+					} else {
+						newIdxInput.style.display = 'none';
+						newIdxInput.value = targetIdx;
+					}
+					actionsDiv.style.display = 'flex';
+				});
+			});
+
+			document.querySelectorAll('.cancel-btn').forEach(btn => {
+				btn.addEventListener('click', function() {
+					const compId = this.dataset.compId;
+					const selector = document.getElementById(`${compId}_selector`);
+					if (selector) selector.style.display = 'none';
+				});
+			});
+
+			document.querySelectorAll('.apply-btn').forEach(btn => {
+				btn.addEventListener('click', async function() {
+					const busKey = this.dataset.busKey;
+					const designator = this.dataset.designator;
+					const compId = this.dataset.compId;
+					const busType = this.dataset.busType;
+
+					const newIdxInput = document.getElementById(`${compId}_newIdx`);
+					const newIdx = parseInt(newIdxInput.value);
+
+					if (!newIdx || newIdx < 1) {
+						toast('请输入有效的序号', 'error');
+						return;
+					}
+
+					const cfg = BUS_CONFIGS.find(c => c.presetName === busType);
+					const compInfo = busComponents[busKey]?.[designator];
+
+					if (!compInfo) {
+						toast('找不到元件信息', 'error');
+						return;
+					}
+
+					toast(`正在更改 ${designator} 到 ${cfg.name}#${newIdx}...`, 'info');
+
+					let successCount = 0;
+
+					for (const pin of compInfo.pins) {
+						const parsed = parseNetName(pin.net);
+						if (!parsed) continue;
+
+						const newNetName = netName(busType, newIdx, parsed.signal);
+
+						try {
+							if (pin.wirePrimitiveId && pin.wireLine) {
+								console.log(`处理: ${pin.net} -> ${newNetName}`);
+								await edaApi.sch_PrimitiveWire.delete(pin.wirePrimitiveId);
+								const newWire = await edaApi.sch_PrimitiveWire.create(pin.wireLine, newNetName);
+								if (newWire) successCount++;
+							}
+						} catch (e) {
+							console.error(`修改失败: ${pin.net}`, e);
+						}
+					}
+
+					if (successCount > 0) {
+						toast(`成功更改 ${successCount} 个网络标签`, 'success');
+						setTimeout(async () => {
+							try { busDetailModal.hide(); } catch (e) {}
+							await new Promise(r => setTimeout(r, 100));
+							await load();
+						}, 200);
+					} else {
+						toast('更改失败', 'error');
+					}
+				});
+			});
+		}
+
+		// 元件详情模态框
+		function showCompDetail(designator) {
+			const comp = allComponents.find(c => c.designator === designator);
+			if (!comp) return;
+
+			$('compModalTitle').innerHTML = `<span class="text-primary">${comp.name}</span> <small class="text-muted">${designator}</small>`;
+
+			// 按连接状态排序引脚：未连接的在前，已连接的在后
+			const sortedPins = comp.pins.map((p, i) => ({ ...p, originalIndex: i }))
+				.sort((a, b) => {
+					if (a.net && !b.net) return 1;
+					if (!a.net && b.net) return -1;
+					return 0;
+				});
+
+			let bodyHtml = `
+				<div class="mb-3">
+					<div class="d-flex justify-content-between align-items-center mb-2">
+						<h6 class="text-muted small mb-0">引脚列表 (${comp.pins.length})</h6>
+						<button type="button" class="btn btn-outline-primary btn-sm" id="selectAllPinsBtn">全选</button>
+					</div>
+					<div class="pin-grid" id="pinGrid">
+						${sortedPins.map((p, i) => `
+							<div class="pin-item ${p.net ? 'connected' : ''}" data-pin-index="${p.originalIndex}">
+								<div class="form-check">
+									<input class="form-check-input pin-checkbox" type="checkbox" id="pin_${p.originalIndex}" data-pin-index="${p.originalIndex}" ${p.net ? 'disabled' : ''}>
+									<label class="form-check-label small ${p.net ? 'text-muted' : ''}" for="pin_${p.originalIndex}">
+										<span class="fw-bold">${p.number || '?'}</span>
+										<span class="text-muted">${p.name || '-'}</span>
+										${p.net ? `<span class="badge bg-success ms-1">${p.net}</span>` : '<span class="badge bg-secondary ms-1">未连接</span>'}
+									</label>
+								</div>
+							</div>
+						`).join('')}
+					</div>
+					<small class="text-muted">已连接的引脚显示在下方且不可选择</small>
+				</div>
+
+				<div class="alert alert-info py-2 px-2 small" id="selectedPinsInfo" style="display:none;">
+					已选择 <span id="selectedCount">0</span> 个引脚
+					<span id="pinWarning" class="text-warning ms-2"></span>
+				</div>
+
+				<div class="d-flex gap-2 mb-3" id="connectBusSection" style="display:none;">
+					<button type="button" class="btn btn-primary btn-sm" id="connectBusBtn">接入总线</button>
+				</div>
+
+				<div id="busSelectorSection" style="display:none;">
+					<div class="row g-2 mb-2">
+						<div class="col-6">
+							<label class="form-label small mb-0">总线类型</label>
+							<select class="form-select form-select-sm" id="connectBusType">
+								<option value="">选择类型...</option>
+							</select>
+						</div>
+						<div class="col-4">
+							<label class="form-label small mb-0">序号</label>
+							<input type="number" class="form-control form-control-sm" id="connectBusIdx" value="1" min="1" max="99">
+						</div>
+					</div>
+
+					<div class="mb-2" id="connectSignalMapping">
+						<label class="form-label small mb-1">信号映射</label>
+						<div id="signalMappingList"></div>
+					</div>
+
+					<div class="d-flex gap-2">
+						<button type="button" class="btn btn-success btn-sm" id="applyConnectBtn">立即接入</button>
+						<button type="button" class="btn btn-secondary btn-sm" id="cancelConnectBtn">取消</button>
+					</div>
+				</div>
+			`;
+
+			$('compModalBody').innerHTML = bodyHtml;
+			bindCompModalEvents(comp);
+			compDetailModal.show();
+		}
+
+		function bindCompModalEvents(comp) {
+			const selectedPins = new Set();
+			const usedPins = new Set(); // 已绑定的引脚
+
+			// 更新总线类型下拉列表，标注引脚数不足的类型
+			function updateBusTypeOptions() {
+				const count = selectedPins.size;
+				let optionsHtml = '<option value="">选择类型...</option>';
+				BUS_CONFIGS.forEach(c => {
+					const signalCount = c.signals.length;
+					const insufficient = count < signalCount;
+					const label = insufficient ? `${c.name} (需${signalCount}引脚，已选${count})` : c.name;
+					optionsHtml += `<option value="${c.name}" ${insufficient ? 'class="text-warning"' : ''}>${label}</option>`;
+				});
+				$('connectBusType').innerHTML = optionsHtml;
+			}
+
+			// 引脚选择
+			document.querySelectorAll('.pin-checkbox').forEach(cb => {
+				cb.addEventListener('change', function() {
+					const idx = parseInt(this.dataset.pinIndex);
+					if (this.checked) {
+						selectedPins.add(idx);
+					} else {
+						selectedPins.delete(idx);
+					}
+					updateSelectedInfo(selectedPins.size);
+					updateBusTypeOptions();
+				});
+			});
+
+			// 点击引脚条目即可选中（仅未连接的引脚）
+			document.querySelectorAll('.pin-item:not(.connected)').forEach(item => {
+				item.style.cursor = 'pointer';
+				item.addEventListener('click', function(e) {
+					// 如果点击的是复选框本身，不处理
+					if (e.target.type === 'checkbox') return;
+					const checkbox = this.querySelector('.pin-checkbox');
+					if (checkbox && !checkbox.disabled) {
+						checkbox.checked = !checkbox.checked;
+						checkbox.dispatchEvent(new Event('change'));
+					}
+				});
+			});
+
+			// 全选（只选择未禁用的引脚）
+			$('selectAllPinsBtn').addEventListener('click', function() {
+				const enabledCheckboxes = document.querySelectorAll('.pin-checkbox:not(:disabled)');
+				const allChecked = enabledCheckboxes.length > 0 && Array.from(enabledCheckboxes).every(cb => cb.checked);
+				enabledCheckboxes.forEach(cb => {
+					cb.checked = !allChecked;
+					const idx = parseInt(cb.dataset.pinIndex);
+					if (!allChecked) {
+						selectedPins.add(idx);
+					} else {
+						selectedPins.delete(idx);
+					}
+				});
+				updateSelectedInfo(!allChecked ? enabledCheckboxes.length : 0);
+				updateBusTypeOptions();
+			});
+
+			function updateSelectedInfo(count) {
+				const info = $('selectedPinsInfo');
+				const section = $('connectBusSection');
+				const warning = $('pinWarning');
+				if (count > 0) {
+					info.style.display = 'block';
+					$('selectedCount').textContent = count;
+					section.style.display = 'flex';
+					// 检查是否有总线类型需要更多引脚
+					const maxNeeded = Math.max(...BUS_CONFIGS.map(c => c.signals.length));
+					if (count < maxNeeded) {
+						warning.textContent = `(部分总线需要更多引脚)`;
+					} else {
+						warning.textContent = '';
+					}
+				} else {
+					info.style.display = 'none';
+					section.style.display = 'none';
+				}
+			}
+
+			// 接入总线按钮
+			$('connectBusBtn').addEventListener('click', function() {
+				$('busSelectorSection').style.display = 'block';
+				this.style.display = 'none';
+				updateBusTypeOptions();
+			});
+
+			// 取消按钮
+			$('cancelConnectBtn').addEventListener('click', function() {
+				$('busSelectorSection').style.display = 'none';
+				$('connectBusBtn').style.display = 'block';
+			});
+
+			// 总线类型选择
+			$('connectBusType').addEventListener('change', function() {
+				const type = this.value;
+				if (!type) return;
+
+				const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+				const selectedPinIndices = Array.from(selectedPins);
+				const selectedPinList = selectedPinIndices.map(i => comp.pins[i]);
+
+				// 按引脚名称排序，方便选择
+				const availablePins = selectedPinIndices.map((idx, i) => ({
+					index: idx,
+					pin: selectedPinList[i]
+				}));
+
+				let mappingHtml = '<div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>信号</th><th>引脚</th><th></th></tr></thead><tbody>';
+				cfg.signals.forEach((sig, i) => {
+					mappingHtml += `
+						<tr>
+							<td><span class="badge bg-primary">${sig}</span></td>
+							<td>
+								<select class="form-select form-select-sm signal-pin-select" data-signal="${sig}">
+									<option value="">选择引脚...</option>
+									${availablePins.map(p => `<option value="${p.index}" ${usedPins.has(p.index) ? 'disabled' : ''}>${p.pin.number || '?'} ${p.pin.name || '-'}${usedPins.has(p.index) ? ' (已用)' : ''}</option>`).join('')}
+								</select>
+							</td>
+							<td><button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 remove-signal-btn" data-signal="${sig}">✕</button></td>
+						</tr>
+					`;
+				});
+				mappingHtml += '</tbody></table></div>';
+
+				$('signalMappingList').innerHTML = mappingHtml;
+
+				// 引脚选择变化时更新其他下拉框
+				document.querySelectorAll('.signal-pin-select').forEach(sel => {
+					sel.addEventListener('change', function() {
+						const currentSignal = this.dataset.signal;
+						const currentValue = this.value;
+
+						// 更新已使用引脚集合
+						usedPins.clear();
+						document.querySelectorAll('.signal-pin-select').forEach(s => {
+							if (s.value) {
+								usedPins.add(parseInt(s.value));
+							}
+						});
+
+						// 更新所有下拉框的禁用状态
+						document.querySelectorAll('.signal-pin-select').forEach(s => {
+							const signal = s.dataset.signal;
+							const savedValue = s.value;
+							Array.from(s.options).forEach(opt => {
+								if (opt.value && opt.value !== savedValue) {
+									opt.disabled = usedPins.has(parseInt(opt.value));
+									opt.textContent = opt.textContent.replace(' (已用)', '') + (usedPins.has(parseInt(opt.value)) ? ' (已用)' : '');
+								}
+							});
+						});
+					});
+				});
+
+				// 移除信号按钮
+				document.querySelectorAll('.remove-signal-btn').forEach(btn => {
+					btn.addEventListener('click', function() {
+						this.closest('tr').remove();
+					});
+				});
+			});
+
+			// 立即接入
+			$('applyConnectBtn').addEventListener('click', async function() {
+				const type = $('connectBusType').value;
+				const idx = parseInt($('connectBusIdx').value);
+
+				if (!type || !idx) {
+					toast('请选择总线类型和序号', 'error');
+					return;
+				}
+
+				const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+				const mappings = [];
+
+				document.querySelectorAll('.signal-pin-select').forEach(sel => {
+					if (sel.value) {
+						mappings.push({
+							signal: sel.dataset.signal,
+							pinIndex: parseInt(sel.value)
+						});
+					}
+				});
+
+				if (mappings.length === 0) {
+					toast('请至少选择一个引脚映射', 'error');
+					return;
+				}
+
+				toast(`正在接入 ${cfg.name}#${idx}...`, 'info');
+
+				let successCount = 0;
+
+				for (const map of mappings) {
+					const pin = comp.pins[map.pinIndex];
+					if (!pin) continue;
+
+					const newNetName = netName(type, idx, map.signal);
+
+					try {
+						// 如果已有连接，先删除
+						if (pin.wirePrimitiveId) {
+							await edaApi.sch_PrimitiveWire.delete(pin.wirePrimitiveId);
+						}
+
+						// 根据引脚朝向确定导线方向
+						// rotation: 0=右, 90=下, 180=左, 270=上
+						const rotation = pin.rotation || 0;
+						const wireLength = 100; // 导线长度加倍，使网络标签显示在末端
+						let line;
+
+						if (rotation >= 315 || rotation < 45) {
+							// 向右 (0°)
+							line = [pin.x, pin.y, pin.x + wireLength, pin.y];
+						} else if (rotation >= 45 && rotation < 135) {
+							// 向下 (90°)
+							line = [pin.x, pin.y, pin.x, pin.y + wireLength];
+						} else if (rotation >= 135 && rotation < 225) {
+							// 向左 (180°)
+							line = [pin.x, pin.y, pin.x - wireLength, pin.y];
+						} else {
+							// 向上 (270°)
+							line = [pin.x, pin.y, pin.x, pin.y - wireLength];
+						}
+
+						const newWire = await edaApi.sch_PrimitiveWire.create(line, newNetName);
+
+						if (newWire) {
+							successCount++;
+							console.log(`已连接: Pin${pin.number} -> ${newNetName}`);
+						}
+					} catch (e) {
+						console.error(`连接失败: Pin${pin.number}`, e);
+					}
+				}
+
+				if (successCount > 0) {
+					toast(`成功接入 ${successCount} 个引脚`, 'success');
+					setTimeout(async () => {
+						try { compDetailModal.hide(); } catch (e) {}
+						await new Promise(r => setTimeout(r, 100));
+						await load();
+					}, 200);
+				} else {
+					toast('接入失败', 'error');
+				}
+			});
+		}
+
+		function updatePreview() {
+			const type = busTypeSelect.value;
+			const idx = busIndexInput.value;
+			const spacing = +spacingInput.value || 10;
+			if (!type || !idx) {
+				signalPreview.style.display = 'none';
+				createBtn.disabled = true;
+				createDelayBtn.disabled = true;
+				return;
+			}
+
+			// 保存当前配置到 localStorage 和 EDA 存储
+			try {
+				const settings = loadSettings();
+				settings.defaultBusType = type;
+				settings.defaultBusIndex = +idx;
+				settings.wireSpacing = spacing;
+				saveSettings(settings);
+
+				// 同时保存到 EDA 存储供快捷键使用
+				edaApi.sys_Storage.setExtensionUserConfig('busConfig', { type, index: +idx, spacing });
+			} catch (e) {
+				console.error('保存配置失败:', e);
+			}
+
+			const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+			signalList.innerHTML = cfg.signals.map(s => `
+				<div class="badge bg-light text-dark border d-block text-start mb-1">🏷 ${netName(type, idx, s)}</div>
+			`).join('');
+			signalPreview.style.display = 'block';
+			createBtn.disabled = false;
+			createDelayBtn.disabled = false;
+		}
+
+		// 根据朝向计算导线坐标
+		function getWireCoords(x, y, index, spacing, length, direction) {
+			switch (direction) {
+				case 'left':
+					return [x, y + index * spacing, x - length, y + index * spacing];
+				case 'up':
+					return [x + index * spacing, y, x + index * spacing, y - length];
+				case 'down':
+					return [x + index * spacing, y, x + index * spacing, y + length];
+				case 'right':
+				default:
+					return [x, y + index * spacing, x + length, y + index * spacing];
+			}
+		}
+
+		// 根据导线方向计算网络标签旋转角度（标签朝向导线起点）
+		function getNetPortRotation(direction) {
+			switch (direction) {
+				case 'right': return 180; // 导线向右，标签朝左
+				case 'left': return 0;    // 导线向左，标签朝右
+				case 'down': return 270;  // 导线向下，标签朝上
+				case 'up': return 90;     // 导线向上，标签朝下
+				default: return 180;
+			}
+		}
+
+		// 核心创建函数
+		async function createWiresAtPosition(x, y) {
+			const type = busTypeSelect.value;
+			const idx = +busIndexInput.value;
+			if (!type) return { ok: 0, total: 0, ids: [] };
+
+			const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+			const settings = loadSettings();
+			const spacing = +spacingInput.value || settings.wireSpacing || 10;
+			const length = settings.wireLength || 50;
+			const direction = settings.wireDirection || 'right';
+
+			const ids = [];
+			let ok = 0;
+
+			for (let i = 0; i < cfg.signals.length; i++) {
+				const name = netName(type, idx, cfg.signals[i]);
+				try {
+					const coords = getWireCoords(x, y, i, spacing, length, direction);
+
+				// 创建带网络标签的导线
+				const w = await edaApi.sch_PrimitiveWire.create(coords, name);
+
+				if (w) {
+						ok++;
+					const pid = w.primitiveId || w.getState_PrimitiveId?.();
+						if (pid) ids.push(pid);
+					}
+				} catch (e) {
+				console.error('创建导线失败:', e);
+				}
+				await new Promise(r => setTimeout(r, 30));
+			}
+
+			return { ok, total: cfg.signals.length, ids };
+		}
+
+		// 固定位置创建
+		async function create(e) {
+			e.preventDefault();
+			if (creating) return;
+
+			creating = true;
+			createBtn.disabled = true;
+			progressAlert.style.display = 'block';
+			progressText.textContent = '正在创建...';
+
+			// 从配置读取固定位置
+			const settings = loadSettings();
+			const result = await createWiresAtPosition(settings.fixedX, settings.fixedY);
+
+			if (result.ids.length) {
+				try {
+					await edaApi.sch_SelectControl.clearSelected();
+					await edaApi.sch_SelectControl.doSelectPrimitives(result.ids);
+				} catch (e) {}
+			}
+
+			creating = false;
+			createBtn.disabled = false;
+			progressAlert.style.display = 'none';
+
+			const type = busTypeSelect.value;
+			const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+			toast(`创建 ${cfg.name}#${busIndexInput.value}，成功 ${result.ok}/${result.total} 个`, result.ok === result.total ? 'success' : 'warning');
+
+			await load();
+		}
+
+		// 延时放置
+		async function createWithDelay() {
+			if (creating) return;
+
+			creating = true;
+			createDelayBtn.disabled = true;
+			delayInfo.style.display = 'block';
+
+			// 从配置读取延时时长
+			const settings = loadSettings();
+			let countdown = settings.delaySeconds;
+			delayCountdown.textContent = countdown;
+
+			const countdownInterval = setInterval(() => {
+				countdown--;
+				delayCountdown.textContent = countdown;
+				if (countdown <= 0) {
+					clearInterval(countdownInterval);
+				}
+			}, 1000);
+
+			// 延时
+			await new Promise(r => setTimeout(r, settings.delaySeconds * 1000));
+
+			try {
+				// 获取鼠标位置
+				const pos = await edaApi.sch_SelectControl.getCurrentMousePosition();
+				console.log('鼠标位置:', pos);
+
+				if (!pos) {
+					toast('无法获取鼠标位置，请确保鼠标在画布上', 'error');
+					creating = false;
+					createDelayBtn.disabled = false;
+					delayInfo.style.display = 'none';
+					return;
+				}
+
+				progressAlert.style.display = 'block';
+				progressText.textContent = '正在创建...';
+
+				const result = await createWiresAtPosition(pos.x, pos.y);
+
+				if (result.ids.length) {
+					try {
+						await edaApi.sch_SelectControl.clearSelected();
+						await edaApi.sch_SelectControl.doSelectPrimitives(result.ids);
+					} catch (e) {}
+				}
+
+				const type = busTypeSelect.value;
+				const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+				toast(`在 (${pos.x}, ${pos.y}) 创建成功 ${result.ok}/${result.total} 个`, result.ok === result.total ? 'success' : 'warning');
+
+				await load();
+			} catch (e) {
+				console.error('延时放置失败:', e);
+				toast(`放置失败: ${e.message || e}`, 'error');
+			} finally {
+				creating = false;
+				createDelayBtn.disabled = false;
+				delayInfo.style.display = 'none';
+				progressAlert.style.display = 'none';
+			}
+		}
+
+		// 快捷键功能在iframe中注册
+		// 显示当前快捷键配置
+		function updateShortcutBtn() {
+			const settings = loadSettings();
+			const key = settings.shortcutKey || '1';
+			shortcutBtn.innerHTML = `⌨ ${key}`;
+		}
+
+		// 快捷键按钮点击注册
+		shortcutBtn.onclick = () => {
+			initShortcutKey();
+		};
+
+		busTypeSelect.onchange = updatePreview;
+		busIndexInput.oninput = updatePreview;
+		$('createForm').onsubmit = create;
+		createDelayBtn.onclick = createWithDelay;
+		
+		// 完善 6：快捷键按钮显示当前快捷键
+		function updateShortcutButtonHint() {
+			const settings = loadSettings();
+			const key = settings.shortcutKey || '1';
+			shortcutBtn.innerHTML = `⌨ ${key}`;
+		}
+
+		// 完善 7：刷新按钮显示快捷键提示
+		function updateRefreshShortcutHint() {
+			const settings = loadSettings();
+			const key = settings.refreshShortcutKey || 'R';
+			$('refreshShortcutHint').textContent = ` (${key})`;
+		}
+		refreshBtn.onclick = async () => { refreshBtn.disabled = true; await load(); refreshBtn.disabled = false; toast('已刷新', 'success'); };
+		sortBtn.onclick = async () => {
+			sortDescending = !sortDescending;
+			sortBuses();
+			renderBuses();
+			toast(`已按元件数${sortDescending ? '降序' : '升序'}排列`, 'success');
+		};
+
+		// 搜索框事件
+		$('busSearchInput').oninput = function() {
+			busSearchText = this.value.trim();
+			renderBuses();
+		};
+
+		$('compSearchInput').oninput = function() {
+			compSearchText = this.value.trim();
+			renderComponents();
+		};
+
+		// 折叠图标状态更新
+		document.querySelectorAll('.collapse').forEach(collapse => {
+			collapse.addEventListener('show.bs.collapse', function() {
+				const icon = this.previousElementSibling?.querySelector('.collapse-icon');
+				if (icon) icon.style.transform = 'rotate(0deg)';
+			});
+			collapse.addEventListener('hide.bs.collapse', function() {
+				const icon = this.previousElementSibling?.querySelector('.collapse-icon');
+				if (icon) icon.style.transform = 'rotate(-90deg)';
+			});
+		});
+
+		updateShortcutBtn();
+		init();
+	</script>
+</body>
+</html>

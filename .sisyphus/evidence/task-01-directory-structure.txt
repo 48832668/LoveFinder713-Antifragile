@@ -1,7 +1,0 @@
-icons
-manifest.json
-popup.html
-scripts
-styles
-test
-utils
