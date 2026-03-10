@@ -1,435 +1,692 @@
 <!doctype html>
 <html lang="zh-Hans">
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>助手设置 - 总线助手</title>
-	<link rel="stylesheet" href="/iframe/css/bootstrap.min.css">
-	<style>
-		body { font-size: 14px; background: #f8f9fa; padding-bottom: 70px; }
-		.card { margin-bottom: 0.75rem; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
-		.card-header { background: #fff; font-weight: 600; }
-		.card-body { background: #fff; }
-		.form-label { font-weight: 500; margin-bottom: 0.25rem; }
-		.form-text { font-size: 0.75rem; }
-		.direction-btn {
-			display: inline-flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			width: 60px;
-			height: 50px;
-			border: 1px solid #dee2e6;
-			border-radius: 0.375rem;
-			cursor: pointer;
-			transition: all 0.15s;
-			background: #fff;
-		}
-		.direction-btn:hover { border-color: #0d6efd; }
-		.direction-btn.active { border-color: #0d6efd; background: #e7f1ff; }
-		.direction-btn .arrow { font-size: 1.25rem; }
-		.direction-btn .text { font-size: 0.7rem; color: #6c757d; }
-		.signal-item {
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-			padding: 0.25rem 0;
-			border-bottom: 1px solid #eee;
-		}
-		.signal-item:last-child { border-bottom: none; }
-		.signal-item input { width: 100px; }
-		.bus-type-card { border-left: 3px solid; }
-		.history-prefix-item {
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-			padding: 0.25rem 0.5rem;
-			background: #f8f9fa;
-			border-radius: 0.25rem;
-			margin-bottom: 0.25rem;
-		}
-		.bottom-bar {
-			position: fixed;
-			bottom: 0;
-			left: 0;
-			right: 0;
-			background: #fff;
-			border-top: 1px solid #dee2e6;
-			padding: 0.75rem;
-			z-index: 1000;
-			box-shadow: 0 -0.125rem 0.25rem rgba(0,0,0,0.075);
-		}
-	</style>
-</head>
-<body>
-	<div class="container-fluid p-2">
-		<!-- 页面标题 -->
-		<div class="card mb-2">
-			<div class="card-header py-2">
-				<span class="fw-bold">⚙️ 助手设置</span>
-			</div>
-			<div class="card-body py-2">
-				<small class="text-muted">自定义总线助手的行为参数</small>
-			</div>
-		</div>
-
-		<form id="settingsForm">
-			<!-- 网络标签前缀 -->
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>助手设置 - 总线助手</title>
+		<link rel="stylesheet" href="/iframe/css/bootstrap.min.css" />
+		<style>
+			body {
+				font-size: 14px;
+				background: #f8f9fa;
+				padding-bottom: 70px;
+			}
+			.card {
+				margin-bottom: 0.75rem;
+				box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+			}
+			.card-header {
+				background: #fff;
+				font-weight: 600;
+			}
+			.card-body {
+				background: #fff;
+			}
+			.form-label {
+				font-weight: 500;
+				margin-bottom: 0.25rem;
+			}
+			.form-text {
+				font-size: 0.75rem;
+			}
+			.direction-btn {
+				display: inline-flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				width: 60px;
+				height: 50px;
+				border: 1px solid #dee2e6;
+				border-radius: 0.375rem;
+				cursor: pointer;
+				transition: all 0.15s;
+				background: #fff;
+			}
+			.direction-btn:hover {
+				border-color: #0d6efd;
+			}
+			.direction-btn.active {
+				border-color: #0d6efd;
+				background: #e7f1ff;
+			}
+			.direction-btn .arrow {
+				font-size: 1.25rem;
+			}
+			.direction-btn .text {
+				font-size: 0.7rem;
+				color: #6c757d;
+			}
+			.signal-item {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 0.25rem 0;
+				border-bottom: 1px solid #eee;
+			}
+			.signal-item:last-child {
+				border-bottom: none;
+			}
+			.signal-item input {
+				width: 100px;
+			}
+			.bus-type-card {
+				border-left: 3px solid;
+			}
+			.history-prefix-item {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 0.25rem 0.5rem;
+				background: #f8f9fa;
+				border-radius: 0.25rem;
+				margin-bottom: 0.25rem;
+			}
+			.bottom-bar {
+				position: fixed;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background: #fff;
+				border-top: 1px solid #dee2e6;
+				padding: 0.75rem;
+				z-index: 1000;
+				box-shadow: 0 -0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+			}
+			/* 调试日志容器 */
+			.debug-log-container {
+				max-height: 150px;
+				overflow-y: auto;
+				background: #1e1e1e;
+				border-radius: 4px;
+				padding: 8px;
+				font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+				font-size: 11px;
+				line-height: 1.4;
+			}
+			.debug-log-item {
+				padding: 2px 0;
+				border-bottom: 1px solid #333;
+			}
+			.debug-log-item:last-child {
+				border-bottom: none;
+			}
+			.debug-log-time {
+				color: #6a9955;
+				margin-right: 8px;
+			}
+			.debug-log-info {
+				color: #9cdcfe;
+			}
+			.debug-log-success {
+				color: #4ec9b0;
+			}
+			.debug-log-warning {
+				color: #dcdcaa;
+			}
+			.debug-log-error {
+				color: #f14c4c;
+			}
+			.debug-log-container::-webkit-scrollbar {
+				width: 6px;
+			}
+			.debug-log-container::-webkit-scrollbar-track {
+				background: #2d2d2d;
+				border-radius: 3px;
+			}
+			.debug-log-container::-webkit-scrollbar-thumb {
+				background: #555;
+				border-radius: 3px;
+			}
+			.debug-log-container::-webkit-scrollbar-thumb:hover {
+				background: #666;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid p-2">
+			<!-- 页面标题 -->
 			<div class="card mb-2">
-				<div class="card-header py-1 px-2">
-					<small class="fw-bold">🏷️ 网络标签前缀</small>
+				<div class="card-header py-2">
+					<span class="fw-bold">⚙️ 助手设置</span>
 				</div>
-				<div class="card-body py-2 px-2">
-					<label class="form-label small mb-0">全局前缀</label>
-					<input type="text" class="form-control form-control-sm mb-2" id="netPrefix" value="SYS" maxlength="10" style="text-transform: uppercase;">
-					<small class="form-text text-muted">网络标签格式: {前缀}_{总线名称}{序号}_{信号}</small>
-					<small class="form-text text-muted d-block">例如: SYS_I2C1_SDA</small>
+				<div class="card-body py-2">
+					<small class="text-muted">自定义总线助手的行为参数</small>
 				</div>
 			</div>
 
-			<!-- 历史前缀（可折叠卡片） -->
-			<div class="card mb-2">
-				<div class="card-header py-1 px-2" data-bs-toggle="collapse" data-bs-target="#historyPrefixCollapse" style="cursor:pointer;">
-					<small class="fw-bold">📜 历史前缀</small>
-					<small class="text-muted ms-2">（点击展开）</small>
-				</div>
-				<div class="collapse" id="historyPrefixCollapse">
+			<form id="settingsForm">
+				<!-- 网络标签前缀 -->
+				<div class="card mb-2">
+					<div class="card-header py-1 px-2">
+						<small class="fw-bold">🏷️ 网络标签前缀</small>
+					</div>
 					<div class="card-body py-2 px-2">
-						<small class="form-text text-muted d-block mb-2">勾选历史前缀以纳入检测范围，可识别旧前缀创建的网络标签</small>
-						<div id="historyPrefixList">
-							<small class="text-muted">暂无历史前缀</small>
+						<label class="form-label small mb-0">全局前缀</label>
+						<input
+							type="text"
+							class="form-control form-control-sm mb-2"
+							id="netPrefix"
+							value="SYS"
+							maxlength="10"
+							style="text-transform: uppercase"
+						/>
+						<small class="form-text text-muted">网络标签格式: {前缀}_{总线名称}{序号}_{信号}</small>
+						<small class="form-text text-muted d-block">例如: SYS_I2C1_SDA</small>
+					</div>
+				</div>
+
+				<!-- 历史前缀（可折叠卡片） -->
+				<div class="card mb-2">
+					<div class="card-header py-1 px-2" data-bs-toggle="collapse" data-bs-target="#historyPrefixCollapse" style="cursor: pointer">
+						<small class="fw-bold">📜 历史前缀</small>
+						<small class="text-muted ms-2">（点击展开）</small>
+					</div>
+					<div class="collapse" id="historyPrefixCollapse">
+						<div class="card-body py-2 px-2">
+							<small class="form-text text-muted d-block mb-2">勾选历史前缀以纳入检测范围，可识别旧前缀创建的网络标签</small>
+							<div id="historyPrefixList">
+								<small class="text-muted">暂无历史前缀</small>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- 总线类型配置 -->
+				<div class="card mb-2">
+					<div class="card-header py-1 px-2">
+						<small class="fw-bold">🔌 总线类型配置</small>
+					</div>
+					<div class="card-body py-2 px-2">
+						<small class="form-text text-muted d-block mb-2">点击总线类型卡片展开编辑，可修改名称、前缀和信号列表</small>
+						<div id="busTypesList"></div>
+
+						<!-- 添加新总线类型 -->
+						<div class="mt-2 pt-2 border-top">
+							<button type="button" class="btn btn-outline-primary btn-sm" id="addBusTypeBtn">➕ 添加新总线类型</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="row g-2">
+					<!-- 左侧列 -->
+					<div class="col-md-6">
+						<!-- 固定位置放置 -->
+						<div class="card mb-2">
+							<div class="card-header py-1 px-2">
+								<small class="fw-bold">📍 固定位置放置</small>
+							</div>
+							<div class="card-body py-2 px-2">
+								<div class="row g-2">
+									<div class="col-6">
+										<label class="form-label small mb-0">X 坐标</label>
+										<div class="input-group input-group-sm">
+											<input type="number" class="form-control" id="fixedX" value="20" />
+											<span class="input-group-text">mil</span>
+										</div>
+									</div>
+									<div class="col-6">
+										<label class="form-label small mb-0">Y 坐标</label>
+										<div class="input-group input-group-sm">
+											<input type="number" class="form-control" id="fixedY" value="20" />
+											<span class="input-group-text">mil</span>
+										</div>
+									</div>
+								</div>
+								<small class="form-text text-muted">点击"固定位置"按钮时放置网络标签的坐标</small>
+							</div>
+						</div>
+
+						<!-- 导线设置 -->
+						<div class="card mb-2">
+							<div class="card-header py-1 px-2">
+								<small class="fw-bold">📏 导线设置</small>
+							</div>
+							<div class="card-body py-2 px-2">
+								<div class="row g-2 mb-2">
+									<div class="col-6">
+										<label class="form-label small mb-0">导线长度</label>
+										<div class="input-group input-group-sm">
+											<input type="number" class="form-control" id="wireLength" value="50" min="10" max="500" />
+											<span class="input-group-text">mil</span>
+										</div>
+										<small class="form-text text-muted">范围: 10-500</small>
+									</div>
+									<div class="col-6">
+										<label class="form-label small mb-0">导线间距</label>
+										<div class="input-group input-group-sm">
+											<input type="number" class="form-control" id="wireSpacing" value="10" min="5" max="100" />
+											<span class="input-group-text">mil</span>
+										</div>
+										<small class="form-text text-muted">范围: 5-100</small>
+									</div>
+								</div>
+								<div class="mb-1">
+									<label class="form-label small mb-1">网络标签朝向</label>
+								</div>
+								<div class="d-flex gap-2 mb-2">
+									<div class="direction-btn" data-direction="right">
+										<span class="arrow">→</span>
+										<span class="text">朝右</span>
+									</div>
+									<div class="direction-btn" data-direction="left">
+										<span class="arrow">←</span>
+										<span class="text">朝左</span>
+									</div>
+									<div class="direction-btn" data-direction="up">
+										<span class="arrow">↑</span>
+										<span class="text">朝上</span>
+									</div>
+									<div class="direction-btn" data-direction="down">
+										<span class="arrow">↓</span>
+										<span class="text">朝下</span>
+									</div>
+								</div>
+								<input type="hidden" id="wireDirection" value="right" />
+								<small class="form-text text-muted">导线延伸方向，网络标签将显示在导线上</small>
+							</div>
+						</div>
+					</div>
+
+					<!-- 右侧列 -->
+					<div class="col-md-6">
+						<!-- 延时放置 -->
+						<div class="card mb-2">
+							<div class="card-header py-1 px-2">
+								<small class="fw-bold">⏱️ 延时放置</small>
+							</div>
+							<div class="card-body py-2 px-2">
+								<label class="form-label small mb-0">延时时长</label>
+								<div class="input-group input-group-sm">
+									<input type="number" class="form-control" id="delaySeconds" value="3" min="1" max="30" />
+									<span class="input-group-text">秒</span>
+								</div>
+								<small class="form-text text-muted">点击"延时放置"后等待的时间 (1-30秒)</small>
+							</div>
+						</div>
+
+						<!-- 快捷键设置 -->
+						<div class="card mb-2">
+							<div class="card-header py-1 px-2">
+								<small class="fw-bold">⌨️ 快捷键设置</small>
+							</div>
+							<div class="card-body py-2 px-2">
+								<div class="row g-2 mb-2">
+									<div class="col-6">
+										<label class="form-label small mb-0">创建快捷键</label>
+										<select class="form-select form-select-sm" id="shortcutKey">
+											<option value="1">数字键 1</option>
+											<option value="2">数字键 2</option>
+											<option value="3">数字键 3</option>
+											<option value="4">数字键 4</option>
+											<option value="5">数字键 5</option>
+											<option value="6">数字键 6</option>
+											<option value="7">数字键 7</option>
+											<option value="8">数字键 8</option>
+											<option value="9">数字键 9</option>
+											<option value="0">数字键 0</option>
+										</select>
+									</div>
+									<div class="col-6">
+										<label class="form-label small mb-0">刷新快捷键</label>
+										<select class="form-select form-select-sm" id="refreshShortcutKey">
+											<option value="R">字母键 R</option>
+											<option value="F">字母键 F</option>
+											<option value="G">字母键 G</option>
+											<option value="H">字母键 H</option>
+											<option value="J">字母键 J</option>
+											<option value="K">字母键 K</option>
+											<option value="L">字母键 L</option>
+										</select>
+									</div>
+								</div>
+								<small class="form-text text-muted">创建: 在鼠标位置创建总线 | 刷新: 刷新总线列表</small>
+							</div>
+						</div>
+
+						<!-- 默认总线配置 -->
+						<div class="card mb-2">
+							<div class="card-header py-1 px-2">
+								<small class="fw-bold">📋 默认总线配置</small>
+							</div>
+							<div class="card-body py-2 px-2">
+								<div class="row g-2">
+									<div class="col-7">
+										<label class="form-label small mb-0">总线类型</label>
+										<select class="form-select form-select-sm" id="defaultBusType"></select>
+									</div>
+									<div class="col-5">
+										<label class="form-label small mb-0">起始序号</label>
+										<input type="number" class="form-control form-control-sm" id="defaultBusIndex" value="1" min="1" />
+									</div>
+								</div>
+								<small class="form-text text-muted">打开面板时默认选中的总线类型和序号</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+
+			<!-- 调试日志 -->
+			<div class="card mb-2">
+				<div
+					class="card-header py-1 px-2 d-flex justify-content-between align-items-center"
+					data-bs-toggle="collapse"
+					data-bs-target="#debugLogCollapse"
+					style="cursor: pointer"
+				>
+					<small class="fw-bold">🐛 调试日志</small>
+					<span class="collapse-icon">▼</span>
+				</div>
+				<div class="collapse" id="debugLogCollapse">
+					<div class="card-body py-2 px-2">
+						<div class="d-flex justify-content-between align-items-center mb-2">
+							<small class="text-muted" id="logCount">0 条记录</small>
+							<button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="clearLogBtn">清空</button>
+						</div>
+						<div id="debugLogContainer" class="debug-log-container">
+							<small class="text-muted">暂无日志</small>
 						</div>
 					</div>
 				</div>
 			</div>
+		</div>
 
-			<!-- 总线类型配置 -->
-			<div class="card mb-2">
-				<div class="card-header py-1 px-2">
-					<small class="fw-bold">🔌 总线类型配置</small>
-				</div>
-				<div class="card-body py-2 px-2">
-					<small class="form-text text-muted d-block mb-2">点击总线类型卡片展开编辑，可修改名称、前缀和信号列表</small>
-					<div id="busTypesList"></div>
-					
-					<!-- 添加新总线类型 -->
-					<div class="mt-2 pt-2 border-top">
-						<button type="button" class="btn btn-outline-primary btn-sm" id="addBusTypeBtn">
-							➕ 添加新总线类型
+		<!-- 底部悬浮按钮 -->
+		<div class="bottom-bar">
+			<div class="container-fluid">
+				<div class="row g-2">
+					<div class="col-3">
+						<button type="submit" form="settingsForm" class="btn btn-primary btn-sm w-100">保存</button>
+					</div>
+					<div class="col-3">
+						<button type="button" class="btn btn-outline-info btn-sm w-100" id="importExportBtn" title="配置导入/导出">导入/导出</button>
+					</div>
+					<div class="col-3">
+						<button type="button" class="btn btn-outline-warning btn-sm w-100" id="clearCacheBtn" title="清除插件缓存数据">
+							清除缓存
 						</button>
 					</div>
-				</div>
-			</div>
-
-			<div class="row g-2">
-				<!-- 左侧列 -->
-				<div class="col-md-6">
-					<!-- 固定位置放置 -->
-					<div class="card mb-2">
-						<div class="card-header py-1 px-2">
-							<small class="fw-bold">📍 固定位置放置</small>
-						</div>
-						<div class="card-body py-2 px-2">
-							<div class="row g-2">
-								<div class="col-6">
-									<label class="form-label small mb-0">X 坐标</label>
-									<div class="input-group input-group-sm">
-										<input type="number" class="form-control" id="fixedX" value="20">
-										<span class="input-group-text">mil</span>
-									</div>
-								</div>
-								<div class="col-6">
-									<label class="form-label small mb-0">Y 坐标</label>
-									<div class="input-group input-group-sm">
-										<input type="number" class="form-control" id="fixedY" value="20">
-										<span class="input-group-text">mil</span>
-									</div>
-								</div>
-							</div>
-							<small class="form-text text-muted">点击"固定位置"按钮时放置网络标签的坐标</small>
-						</div>
+					<div class="col-3">
+						<button type="button" class="btn btn-outline-secondary btn-sm w-100" id="resetBtn" title="恢复默认配置">恢复默认</button>
 					</div>
-
-					<!-- 导线设置 -->
-					<div class="card mb-2">
-						<div class="card-header py-1 px-2">
-							<small class="fw-bold">📏 导线设置</small>
-						</div>
-						<div class="card-body py-2 px-2">
-							<div class="row g-2 mb-2">
-								<div class="col-6">
-									<label class="form-label small mb-0">导线长度</label>
-									<div class="input-group input-group-sm">
-										<input type="number" class="form-control" id="wireLength" value="50" min="10" max="500">
-										<span class="input-group-text">mil</span>
-									</div>
-									<small class="form-text text-muted">范围: 10-500</small>
-								</div>
-								<div class="col-6">
-									<label class="form-label small mb-0">导线间距</label>
-									<div class="input-group input-group-sm">
-										<input type="number" class="form-control" id="wireSpacing" value="10" min="5" max="100">
-										<span class="input-group-text">mil</span>
-									</div>
-									<small class="form-text text-muted">范围: 5-100</small>
-								</div>
-							</div>
-							<div class="mb-1">
-								<label class="form-label small mb-1">网络标签朝向</label>
-							</div>
-							<div class="d-flex gap-2 mb-2">
-								<div class="direction-btn" data-direction="right">
-									<span class="arrow">→</span>
-									<span class="text">朝右</span>
-								</div>
-								<div class="direction-btn" data-direction="left">
-									<span class="arrow">←</span>
-									<span class="text">朝左</span>
-								</div>
-								<div class="direction-btn" data-direction="up">
-									<span class="arrow">↑</span>
-									<span class="text">朝上</span>
-								</div>
-								<div class="direction-btn" data-direction="down">
-									<span class="arrow">↓</span>
-									<span class="text">朝下</span>
-								</div>
-							</div>
-							<input type="hidden" id="wireDirection" value="right">
-							<small class="form-text text-muted">导线延伸方向，网络标签将显示在导线上</small>
-						</div>
-					</div>
-				</div>
-
-				<!-- 右侧列 -->
-				<div class="col-md-6">
-					<!-- 延时放置 -->
-					<div class="card mb-2">
-						<div class="card-header py-1 px-2">
-							<small class="fw-bold">⏱️ 延时放置</small>
-						</div>
-						<div class="card-body py-2 px-2">
-							<label class="form-label small mb-0">延时时长</label>
-							<div class="input-group input-group-sm">
-								<input type="number" class="form-control" id="delaySeconds" value="3" min="1" max="30">
-								<span class="input-group-text">秒</span>
-							</div>
-							<small class="form-text text-muted">点击"延时放置"后等待的时间 (1-30秒)</small>
-						</div>
-					</div>
-
-					<!-- 快捷键设置 -->
-					<div class="card mb-2">
-						<div class="card-header py-1 px-2">
-							<small class="fw-bold">⌨️ 快捷键设置</small>
-						</div>
-						<div class="card-body py-2 px-2">
-							<div class="row g-2 mb-2">
-								<div class="col-6">
-									<label class="form-label small mb-0">创建快捷键</label>
-									<select class="form-select form-select-sm" id="shortcutKey">
-										<option value="1">数字键 1</option>
-										<option value="2">数字键 2</option>
-										<option value="3">数字键 3</option>
-										<option value="4">数字键 4</option>
-										<option value="5">数字键 5</option>
-										<option value="6">数字键 6</option>
-										<option value="7">数字键 7</option>
-										<option value="8">数字键 8</option>
-										<option value="9">数字键 9</option>
-										<option value="0">数字键 0</option>
-									</select>
-								</div>
-								<div class="col-6">
-									<label class="form-label small mb-0">刷新快捷键</label>
-									<select class="form-select form-select-sm" id="refreshShortcutKey">
-										<option value="R">字母键 R</option>
-										<option value="F">字母键 F</option>
-										<option value="G">字母键 G</option>
-										<option value="H">字母键 H</option>
-										<option value="J">字母键 J</option>
-										<option value="K">字母键 K</option>
-										<option value="L">字母键 L</option>
-									</select>
-								</div>
-							</div>
-							<small class="form-text text-muted">创建: 在鼠标位置创建总线 | 刷新: 刷新总线列表</small>
-						</div>
-					</div>
-
-					<!-- 默认总线配置 -->
-					<div class="card mb-2">
-						<div class="card-header py-1 px-2">
-							<small class="fw-bold">📋 默认总线配置</small>
-						</div>
-						<div class="card-body py-2 px-2">
-							<div class="row g-2">
-								<div class="col-7">
-									<label class="form-label small mb-0">总线类型</label>
-									<select class="form-select form-select-sm" id="defaultBusType">
-									</select>
-								</div>
-								<div class="col-5">
-									<label class="form-label small mb-0">起始序号</label>
-									<input type="number" class="form-control form-control-sm" id="defaultBusIndex" value="1" min="1">
-								</div>
-							</div>
-							<small class="form-text text-muted">打开面板时默认选中的总线类型和序号</small>
-						</div>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
-
-	<!-- 底部悬浮按钮 -->
-	<div class="bottom-bar">
-		<div class="container-fluid">
-			<div class="row g-2">
-				<div class="col-3">
-					<button type="submit" form="settingsForm" class="btn btn-primary btn-sm w-100">
-						💾 保存配置
-					</button>
-				</div>
-				<div class="col-2">
-					<button type="button" class="btn btn-outline-info btn-sm w-100" id="importExportBtn" title="配置导入/导出">
-						💾 导入/导出
-					</button>
-				</div>
-				<div class="col-2">
-					<button type="button" class="btn btn-outline-warning btn-sm w-100" id="clearCacheBtn" title="清除插件缓存数据">
-						🗑️ 清除缓存
-					</button>
-				</div>
-				<div class="col-2">
-					<button type="button" class="btn btn-outline-secondary btn-sm w-100" id="resetBtn" title="恢复默认配置">
-						🔄 恢复默认
-					</button>
-				</div>
-				<div class="col-3">
-					<button type="button" class="btn btn-outline-danger btn-sm w-100" id="closeBtn" title="关闭设置面板">
-						✕ 关闭
-					</button>
 				</div>
 			</div>
 		</div>
-	</div>
 
-	<!-- Toast容器 -->
-	<div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
+		<!-- 导入导出模态框 -->
+		<div class="modal fade" id="exportModal" tabindex="-1">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header py-2">
+						<h6 class="modal-title">导入/导出配置</h6>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body py-2">
+						<div class="d-grid gap-2">
+							<button type="button" class="btn btn-primary" id="exportBtn">导出配置文件</button>
+							<hr class="my-2" />
+							<input type="file" id="importFile" accept=".json" style="display: none" />
+							<button type="button" class="btn btn-outline-primary" id="importBtn">导入配置文件</button>
+						</div>
+						<small class="text-muted d-block mt-2">导入配置将覆盖当前设置</small>
+					</div>
+				</div>
+			</div>
+		</div>
 
-	<script src="/iframe/js/bootstrap.bundle.min.js"></script>
-	<script>
-		const STORAGE_KEY = 'mcu-bus-helper-settings';
+		<!-- Toast容器 -->
+		<div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
 
-		const DEFAULT_BUS_CONFIGS = [
-			{ name: 'I2C', presetName: 'I2C', labelId: 'IIC', prefix: '', signals: ['SDA', 'SCL'], color: '#0d6efd' },
-			{ name: 'SPI', presetName: 'SPI', labelId: 'SPI', prefix: '', signals: ['MOSI', 'MISO', 'SCK', 'CS'], color: '#198754' },
-			{ name: 'UART', presetName: 'UART', labelId: 'UART', prefix: '', signals: ['TX', 'RX'], color: '#ffc107' },
-			{ name: 'CAN', presetName: 'CAN', labelId: 'CAN', prefix: '', signals: ['CANH', 'CANL'], color: '#dc3545' },
-			{ name: 'SDIO', presetName: 'SDIO', labelId: 'SDIO', prefix: '', signals: ['CLK', 'CMD', 'D0', 'D1', 'D2', 'D3'], color: '#6f42c1' }
-		];
+		<script src="/iframe/js/bootstrap.bundle.min.js"></script>
+		<script>
+			const STORAGE_KEY = 'mcu-bus-helper-settings';
 
-		const DEFAULT_SETTINGS = {
-			fixedX: 20,
-			fixedY: 20,
-			delaySeconds: 3,
-			wireSpacing: 10,
-			wireLength: 50,
-			wireDirection: 'right',
-			shortcutKey: '1',
-			refreshShortcutKey: 'R',
-			netPrefix: 'SYS',
-			historyPrefixes: [],
-			enabledHistoryPrefixes: [],
-			busConfigs: DEFAULT_BUS_CONFIGS,
-			defaultBusType: 'I2C',
-			defaultBusIndex: 1
-		};
+			const DEFAULT_BUS_CONFIGS = [
+				{ name: 'I2C', presetName: 'I2C', labelId: 'IIC', prefix: '', signals: ['SDA', 'SCL'], color: '#0d6efd' },
+				{ name: 'SPI', presetName: 'SPI', labelId: 'SPI', prefix: '', signals: ['MOSI', 'MISO', 'SCK', 'CS'], color: '#198754' },
+				{ name: 'UART', presetName: 'UART', labelId: 'UART', prefix: '', signals: ['TX', 'RX'], color: '#ffc107' },
+				{ name: 'CAN', presetName: 'CAN', labelId: 'CAN', prefix: '', signals: ['CANH', 'CANL'], color: '#dc3545' },
+				{ name: 'SDIO', presetName: 'SDIO', labelId: 'SDIO', prefix: '', signals: ['CLK', 'CMD', 'D0', 'D1', 'D2', 'D3'], color: '#6f42c1' },
+			];
 
-		const $ = id => document.getElementById(id);
-		const fixedXInput = $('fixedX');
-		const fixedYInput = $('fixedY');
-		const delaySecondsInput = $('delaySeconds');
-		const wireSpacingInput = $('wireSpacing');
-		const wireLengthInput = $('wireLength');
-		const wireDirectionInput = $('wireDirection');
-		const shortcutKeySelect = $('shortcutKey');
-		const refreshShortcutKeySelect = $('refreshShortcutKey');
-		const netPrefixInput = $('netPrefix');
-		const defaultBusTypeSelect = $('defaultBusType');
-		const defaultBusIndexInput = $('defaultBusIndex');
-		const settingsForm = $('settingsForm');
-		const resetBtn = $('resetBtn');
-		const closeBtn = $('closeBtn');
-		const toastContainer = $('toastContainer');
-		const directionBtns = document.querySelectorAll('.direction-btn');
-		const busTypesList = $('busTypesList');
-		const historyPrefixList = $('historyPrefixList');
-		const addBusTypeBtn = $('addBusTypeBtn');
+			const DEFAULT_SETTINGS = {
+				fixedX: 20,
+				fixedY: 20,
+				delaySeconds: 3,
+				wireSpacing: 10,
+				wireLength: 50,
+				wireDirection: 'right',
+				shortcutKey: '1',
+				refreshShortcutKey: 'R',
+				netPrefix: 'SYS',
+				historyPrefixes: [],
+				enabledHistoryPrefixes: [],
+				busConfigs: DEFAULT_BUS_CONFIGS,
+				defaultBusType: 'I2C',
+				defaultBusIndex: 1,
+			};
 
-		let currentBusConfigs = [];
-		let currentHistoryPrefixes = [];
-		let currentEnabledHistoryPrefixes = [];
+			/**
+			 * 检查是否存在已保存的配置
+			 */
+			function hasExistingConfig() {
+				try {
+					const saved = localStorage.getItem(STORAGE_KEY);
+					if (saved) {
+						const config = JSON.parse(saved);
+						// 检查关键字段是否存在
+						return config && typeof config.netPrefix === 'string';
+					}
+				} catch (e) {
+					console.error('[配置] 检查失败:', e);
+				}
+				return false;
+			}
 
-		function showToast(message, type = 'success') {
-			const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-warning';
-			const toast = document.createElement('div');
-			toast.className = `toast align-items-center text-white ${bgClass} border-0`;
-			toast.setAttribute('role', 'alert');
-			toast.innerHTML = `
+			/**
+			 * 初始化配置（首次使用时调用）
+			 */
+			function initializeConfig() {
+				const defaultConfig = { ...DEFAULT_SETTINGS, busConfigs: [...DEFAULT_BUS_CONFIGS] };
+				localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultConfig));
+				console.log('[配置] 已初始化默认配置');
+				return defaultConfig;
+			}
+
+			// ==================== 调试日志系统（共享） ====================
+			const LOG_STORAGE_KEY = 'mcu-bus-helper-logs';
+			const $ = (id) => document.getElementById(id);
+			const debugLogContainer = $('debugLogContainer');
+			const logCountEl = $('logCount');
+			const clearLogBtn = $('clearLogBtn');
+
+			/**
+			 * 加载共享日志
+			 */
+			function loadSharedLogs() {
+				try {
+					const saved = localStorage.getItem(LOG_STORAGE_KEY);
+					if (saved) {
+						return JSON.parse(saved);
+					}
+				} catch (e) {
+					console.error('[日志] 加载失败:', e);
+				}
+				return [];
+			}
+
+			/**
+			 * 保存共享日志
+			 */
+			function saveSharedLogs(logs) {
+				try {
+					localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+				} catch (e) {
+					console.error('[日志] 保存失败:', e);
+				}
+			}
+
+			/**
+			 * 添加调试日志
+			 */
+			function log(msg, type = 'info') {
+				const now = new Date();
+				const time = now.toLocaleTimeString('zh-CN', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+
+				// 加载现有日志
+				const logs = loadSharedLogs();
+				logs.push({ time, msg, type, source: '设置' });
+
+				// 限制日志数量
+				while (logs.length > 100) {
+					logs.shift();
+				}
+
+				// 保存日志
+				saveSharedLogs(logs);
+
+				// 渲染日志
+				renderDebugLogs();
+
+				console.log(`[总线助手-设置] ${time} [${type.toUpperCase()}] ${msg}`);
+			}
+
+			/**
+			 * 渲染调试日志
+			 */
+			function renderDebugLogs() {
+				const logs = loadSharedLogs();
+
+				if (logs.length === 0) {
+					debugLogContainer.innerHTML = '<small class="text-muted">暂无日志</small>';
+					logCountEl.textContent = '0 条记录';
+					return;
+				}
+
+				debugLogContainer.innerHTML = logs
+					.map(
+						(item) => `
+				<div class="debug-log-item">
+					<span class="debug-log-time">${item.time}</span>
+					<span class="debug-log-${item.type}">[${item.source || '主面板'}] ${escapeHtml(item.msg)}</span>
+				</div>
+			`,
+					)
+					.join('');
+
+				logCountEl.textContent = `${logs.length} 条记录`;
+
+				// 滚动到底部
+				debugLogContainer.scrollTop = debugLogContainer.scrollHeight;
+			}
+
+			/**
+			 * HTML 转义
+			 */
+			function escapeHtml(text) {
+				const div = document.createElement('div');
+				div.textContent = text;
+				return div.innerHTML;
+			}
+
+			/**
+			 * 清空调试日志
+			 */
+			function clearDebugLogs() {
+				saveSharedLogs([]);
+				renderDebugLogs();
+			}
+
+			// 清空日志按钮事件
+			clearLogBtn.onclick = clearDebugLogs;
+
+			const fixedXInput = $('fixedX');
+			const fixedYInput = $('fixedY');
+			const delaySecondsInput = $('delaySeconds');
+			const wireSpacingInput = $('wireSpacing');
+			const wireLengthInput = $('wireLength');
+			const wireDirectionInput = $('wireDirection');
+			const shortcutKeySelect = $('shortcutKey');
+			const refreshShortcutKeySelect = $('refreshShortcutKey');
+			const netPrefixInput = $('netPrefix');
+			const defaultBusTypeSelect = $('defaultBusType');
+			const defaultBusIndexInput = $('defaultBusIndex');
+			const settingsForm = $('settingsForm');
+			const resetBtn = $('resetBtn');
+			const toastContainer = $('toastContainer');
+			const directionBtns = document.querySelectorAll('.direction-btn');
+			const busTypesList = $('busTypesList');
+			const historyPrefixList = $('historyPrefixList');
+			const addBusTypeBtn = $('addBusTypeBtn');
+
+			let currentBusConfigs = [];
+			let currentHistoryPrefixes = [];
+			let currentEnabledHistoryPrefixes = [];
+
+			function showToast(message, type = 'success') {
+				const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-warning';
+				const toast = document.createElement('div');
+				toast.className = `toast align-items-center text-white ${bgClass} border-0`;
+				toast.setAttribute('role', 'alert');
+				toast.innerHTML = `
 				<div class="d-flex">
 					<div class="toast-body">${message}</div>
 					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
 				</div>
 			`;
-			toastContainer.appendChild(toast);
-			const bsToast = new bootstrap.Toast(toast, { delay: 2000 });
-			bsToast.show();
-			toast.addEventListener('hidden.bs.toast', () => toast.remove());
-		}
-
-		// 方向按钮点击
-		directionBtns.forEach(btn => {
-			btn.onclick = () => {
-				directionBtns.forEach(b => b.classList.remove('active'));
-				btn.classList.add('active');
-				wireDirectionInput.value = btn.dataset.direction;
-			};
-		});
-
-		function setDirection(direction) {
-			directionBtns.forEach(btn => {
-				btn.classList.toggle('active', btn.dataset.direction === direction);
-			});
-			wireDirectionInput.value = direction;
-		}
-
-		// 渲染历史前缀列表
-		function renderHistoryPrefixes() {
-			const currentPrefix = netPrefixInput.value.toUpperCase();
-			
-			// 过滤掉当前前缀
-			const filteredHistory = currentHistoryPrefixes.filter(p => p !== currentPrefix);
-
-			if (filteredHistory.length === 0) {
-				historyPrefixList.innerHTML = '<small class="text-muted">暂无历史前缀</small>';
-				return;
+				toastContainer.appendChild(toast);
+				const bsToast = new bootstrap.Toast(toast, { delay: 2000 });
+				bsToast.show();
+				toast.addEventListener('hidden.bs.toast', () => toast.remove());
 			}
 
-			historyPrefixList.innerHTML = filteredHistory.map(p => `
+			// 方向按钮点击
+			directionBtns.forEach((btn) => {
+				btn.onclick = () => {
+					directionBtns.forEach((b) => b.classList.remove('active'));
+					btn.classList.add('active');
+					wireDirectionInput.value = btn.dataset.direction;
+				};
+			});
+
+			function setDirection(direction) {
+				directionBtns.forEach((btn) => {
+					btn.classList.toggle('active', btn.dataset.direction === direction);
+				});
+				wireDirectionInput.value = direction;
+			}
+
+			// 渲染历史前缀列表
+			function renderHistoryPrefixes() {
+				const currentPrefix = netPrefixInput.value.toUpperCase();
+
+				// 过滤掉当前前缀
+				const filteredHistory = currentHistoryPrefixes.filter((p) => p !== currentPrefix);
+
+				if (filteredHistory.length === 0) {
+					historyPrefixList.innerHTML = '<small class="text-muted">暂无历史前缀</small>';
+					return;
+				}
+
+				historyPrefixList.innerHTML = filteredHistory
+					.map(
+						(p) => `
 				<div class="history-prefix-item">
 					<div class="form-check mb-0">
 						<input class="form-check-input history-prefix-checkbox" type="checkbox" id="hist_${p}" value="${p}" ${currentEnabledHistoryPrefixes.includes(p) ? 'checked' : ''}>
 						<label class="form-check-label small" for="hist_${p}">${p}</label>
 					</div>
 				</div>
-			`).join('');
-		}
+			`,
+					)
+					.join('');
+			}
 
-		// 渲染总线类型列表
-		function renderBusTypes() {
-			busTypesList.innerHTML = currentBusConfigs.map((cfg, idx) => `
+			// 渲染总线类型列表
+			function renderBusTypes() {
+				busTypesList.innerHTML = currentBusConfigs
+					.map(
+						(cfg, idx) => `
 				<div class="card mb-2 bus-type-card" style="border-left-color: ${cfg.color};" data-index="${idx}">
 					<div class="card-header py-1 px-2 d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#busConfig_${idx}">
 						<span>
@@ -462,403 +719,506 @@
 							<div class="mb-1">
 								<label class="form-label small mb-0">信号列表</label>
 								<div class="signal-list" id="signalList_${idx}">
-									${cfg.signals.map((sig, sigIdx) => `
+									${cfg.signals
+										.map(
+											(sig, sigIdx) => `
 										<div class="signal-item">
 											<input type="text" class="form-control form-control-sm signal-input" data-bus-index="${idx}" data-signal-index="${sigIdx}" value="${sig}" style="text-transform: uppercase;">
 											<button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 remove-signal-btn" data-bus-index="${idx}" data-signal-index="${sigIdx}">✕</button>
 										</div>
-									`).join('')}
+									`,
+										)
+										.join('')}
 								</div>
 								<button type="button" class="btn btn-outline-primary btn-sm mt-1 add-signal-btn" data-bus-index="${idx}">➕ 添加信号</button>
 							</div>
 						</div>
 					</div>
 				</div>
-			`).join('');
+			`,
+					)
+					.join('');
 
-			// 绑定事件
-			bindBusTypeEvents();
-		}
+				// 绑定事件
+				bindBusTypeEvents();
+			}
 
-		function bindBusTypeEvents() {
-			// 删除总线类型 - 阻止事件冒泡
-			document.querySelectorAll('.delete-bus-btn').forEach(btn => {
-				btn.onclick = (e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					const idx = parseInt(btn.dataset.index);
-					if (currentBusConfigs.length <= 1) {
-						showToast('至少保留一个总线类型', 'error');
-						return;
-					}
-					currentBusConfigs.splice(idx, 1);
-					renderBusTypes();
-					updateDefaultBusTypeSelect();
-				};
-			});
-
-			// 总线名称修改
-			document.querySelectorAll('.bus-name-input').forEach(input => {
-				input.onchange = function() {
-					const idx = parseInt(this.dataset.index);
-					const newName = this.value.toUpperCase();
-					currentBusConfigs[idx].name = newName;
-					// 同步更新 presetName 和 labelId
-					currentBusConfigs[idx].presetName = newName;
-					currentBusConfigs[idx].labelId = newName;
-					// 更新卡片标题
-					const badge = this.closest('.card').querySelector('.badge');
-					if (badge) badge.textContent = newName;
-					updateDefaultBusTypeSelect();
-				};
-			});
-
-			// 总线前缀修改
-			document.querySelectorAll('.bus-prefix-input').forEach(input => {
-				input.onchange = function() {
-					const idx = parseInt(this.dataset.index);
-					const newPrefix = this.value.toUpperCase();
-					currentBusConfigs[idx].prefix = newPrefix;
-					
-					// 记录到历史前缀
-					if (newPrefix && !currentHistoryPrefixes.includes(newPrefix)) {
-						currentHistoryPrefixes.push(newPrefix);
-					}
-					
-					// 更新卡片标题显示
-					renderBusTypes();
-				};
-			});
-
-			// 颜色修改
-			document.querySelectorAll('.bus-color-input').forEach(input => {
-				input.onchange = function() {
-					const idx = parseInt(this.dataset.index);
-					currentBusConfigs[idx].color = this.value;
-					// 更新卡片颜色
-					const card = this.closest('.bus-type-card');
-					if (card) card.style.borderLeftColor = this.value;
-					const badge = this.closest('.card').querySelector('.badge');
-					if (badge) badge.style.background = this.value;
-				};
-			});
-
-			// 信号修改
-			document.querySelectorAll('.signal-input').forEach(input => {
-				input.onchange = function() {
-					const busIdx = parseInt(this.dataset.busIndex);
-					const sigIdx = parseInt(this.dataset.signalIndex);
-					currentBusConfigs[busIdx].signals[sigIdx] = this.value.toUpperCase();
-				};
-			});
-
-			// 删除信号 - 阻止事件冒泡
-			document.querySelectorAll('.remove-signal-btn').forEach(btn => {
-				btn.onclick = function(e) {
-					e.preventDefault();
-					e.stopPropagation();
-					const busIdx = parseInt(this.dataset.busIndex);
-					const sigIdx = parseInt(this.dataset.signalIndex);
-					if (currentBusConfigs[busIdx].signals.length <= 1) {
-						showToast('至少保留一个信号', 'error');
-						return;
-					}
-					currentBusConfigs[busIdx].signals.splice(sigIdx, 1);
-					renderBusTypes();
-				};
-			});
-
-			// 添加信号 - 阻止事件冒泡
-			document.querySelectorAll('.add-signal-btn').forEach(btn => {
-				btn.onclick = function(e) {
-					e.preventDefault();
-					e.stopPropagation();
-					const busIdx = parseInt(this.dataset.busIndex);
-					currentBusConfigs[busIdx].signals.push('NEW');
-					
-					// 重新渲染并保持展开状态
-					const collapseId = `busConfig_${busIdx}`;
-					renderBusTypes();
-					
-					// 重新展开
-					setTimeout(() => {
-						const collapseEl = document.getElementById(collapseId);
-						if (collapseEl && !collapseEl.classList.contains('show')) {
-							collapseEl.classList.add('show');
+			function bindBusTypeEvents() {
+				// 删除总线类型 - 阻止事件冒泡
+				document.querySelectorAll('.delete-bus-btn').forEach((btn) => {
+					btn.onclick = (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						const idx = parseInt(btn.dataset.index);
+						if (currentBusConfigs.length <= 1) {
+							showToast('至少保留一个总线类型', 'error');
+							return;
 						}
-					}, 10);
+						currentBusConfigs.splice(idx, 1);
+						renderBusTypes();
+						updateDefaultBusTypeSelect();
+					};
+				});
+
+				// 总线名称修改
+				document.querySelectorAll('.bus-name-input').forEach((input) => {
+					input.onchange = function () {
+						const idx = parseInt(this.dataset.index);
+						const newName = this.value.toUpperCase();
+						currentBusConfigs[idx].name = newName;
+						// 同步更新 presetName 和 labelId
+						currentBusConfigs[idx].presetName = newName;
+						currentBusConfigs[idx].labelId = newName;
+						// 更新卡片标题
+						const badge = this.closest('.card').querySelector('.badge');
+						if (badge) badge.textContent = newName;
+						updateDefaultBusTypeSelect();
+					};
+				});
+
+				// 总线前缀修改
+				document.querySelectorAll('.bus-prefix-input').forEach((input) => {
+					input.onchange = function () {
+						const idx = parseInt(this.dataset.index);
+						const newPrefix = this.value.toUpperCase();
+						currentBusConfigs[idx].prefix = newPrefix;
+
+						// 记录到历史前缀
+						if (newPrefix && !currentHistoryPrefixes.includes(newPrefix)) {
+							currentHistoryPrefixes.push(newPrefix);
+						}
+
+						// 更新卡片标题显示
+						renderBusTypes();
+					};
+				});
+
+				// 颜色修改
+				document.querySelectorAll('.bus-color-input').forEach((input) => {
+					input.onchange = function () {
+						const idx = parseInt(this.dataset.index);
+						currentBusConfigs[idx].color = this.value;
+						// 更新卡片颜色
+						const card = this.closest('.bus-type-card');
+						if (card) card.style.borderLeftColor = this.value;
+						const badge = this.closest('.card').querySelector('.badge');
+						if (badge) badge.style.background = this.value;
+					};
+				});
+
+				// 信号修改
+				document.querySelectorAll('.signal-input').forEach((input) => {
+					input.onchange = function () {
+						const busIdx = parseInt(this.dataset.busIndex);
+						const sigIdx = parseInt(this.dataset.signalIndex);
+						currentBusConfigs[busIdx].signals[sigIdx] = this.value.toUpperCase();
+					};
+				});
+
+				// 删除信号 - 阻止事件冒泡
+				document.querySelectorAll('.remove-signal-btn').forEach((btn) => {
+					btn.onclick = function (e) {
+						e.preventDefault();
+						e.stopPropagation();
+						const busIdx = parseInt(this.dataset.busIndex);
+						const sigIdx = parseInt(this.dataset.signalIndex);
+						if (currentBusConfigs[busIdx].signals.length <= 1) {
+							showToast('至少保留一个信号', 'error');
+							return;
+						}
+						currentBusConfigs[busIdx].signals.splice(sigIdx, 1);
+						renderBusTypes();
+					};
+				});
+
+				// 添加信号 - 阻止事件冒泡
+				document.querySelectorAll('.add-signal-btn').forEach((btn) => {
+					btn.onclick = function (e) {
+						e.preventDefault();
+						e.stopPropagation();
+						const busIdx = parseInt(this.dataset.busIndex);
+						currentBusConfigs[busIdx].signals.push('NEW');
+
+						// 重新渲染并保持展开状态
+						const collapseId = `busConfig_${busIdx}`;
+						renderBusTypes();
+
+						// 重新展开
+						setTimeout(() => {
+							const collapseEl = document.getElementById(collapseId);
+							if (collapseEl && !collapseEl.classList.contains('show')) {
+								collapseEl.classList.add('show');
+							}
+						}, 10);
+					};
+				});
+			}
+
+			// 添加新总线类型
+			addBusTypeBtn.onclick = () => {
+				const newName = 'NEW' + (currentBusConfigs.length + 1);
+				const newType = {
+					name: newName,
+					presetName: newName,
+					labelId: newName,
+					prefix: '',
+					signals: ['SIG1', 'SIG2'],
+					color:
+						'#' +
+						Math.floor(Math.random() * 16777215)
+							.toString(16)
+							.padStart(6, '0'),
 				};
-			});
-		}
-
-		// 添加新总线类型
-		addBusTypeBtn.onclick = () => {
-			const newName = 'NEW' + (currentBusConfigs.length + 1);
-			const newType = {
-				name: newName,
-				presetName: newName,
-				labelId: newName,
-				prefix: '',
-				signals: ['SIG1', 'SIG2'],
-				color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
-			};
-			currentBusConfigs.push(newType);
-			renderBusTypes();
-			updateDefaultBusTypeSelect();
-		};
-
-		// 更新默认总线类型下拉框
-		function updateDefaultBusTypeSelect() {
-			const currentValue = defaultBusTypeSelect.value;
-			defaultBusTypeSelect.innerHTML = currentBusConfigs.map(cfg =>
-				`<option value="${cfg.presetName}">${cfg.presetName}</option>`
-			).join('');
-			// 尝试保持之前的选择
-			if (currentBusConfigs.find(c => c.presetName === currentValue)) {
-				defaultBusTypeSelect.value = currentValue;
-			}
-		}
-
-		function loadSettings() {
-			try {
-				const saved = localStorage.getItem(STORAGE_KEY);
-				if (saved) {
-					const s = JSON.parse(saved);
-					fixedXInput.value = s.fixedX ?? DEFAULT_SETTINGS.fixedX;
-					fixedYInput.value = s.fixedY ?? DEFAULT_SETTINGS.fixedY;
-					delaySecondsInput.value = s.delaySeconds ?? DEFAULT_SETTINGS.delaySeconds;
-					wireSpacingInput.value = s.wireSpacing ?? DEFAULT_SETTINGS.wireSpacing;
-					wireLengthInput.value = s.wireLength ?? DEFAULT_SETTINGS.wireLength;
-					shortcutKeySelect.value = s.shortcutKey ?? DEFAULT_SETTINGS.shortcutKey;
-					refreshShortcutKeySelect.value = s.refreshShortcutKey ?? DEFAULT_SETTINGS.refreshShortcutKey;
-					netPrefixInput.value = s.netPrefix ?? DEFAULT_SETTINGS.netPrefix;
-					defaultBusIndexInput.value = s.defaultBusIndex ?? DEFAULT_SETTINGS.defaultBusIndex;
-					setDirection(s.wireDirection ?? DEFAULT_SETTINGS.wireDirection);
-					
-					// 加载历史前缀
-					currentHistoryPrefixes = s.historyPrefixes || [];
-					currentEnabledHistoryPrefixes = s.enabledHistoryPrefixes || [];
-					
-					// 加载总线配置
-					if (s.busConfigs && s.busConfigs.length > 0) {
-						currentBusConfigs = s.busConfigs.map(cfg => ({
-							name: cfg.name || 'UNKNOWN',
-							presetName: cfg.presetName || cfg.name || 'UNKNOWN',
-							labelId: cfg.labelId || cfg.name || 'UNKNOWN',
-							prefix: cfg.prefix || '',
-							signals: cfg.signals || [],
-							color: cfg.color || '#6c757d'
-						}));
-					} else {
-						currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
-					}
-
-					renderBusTypes();
-					updateDefaultBusTypeSelect();
-
-					// 设置默认总线类型
-					if (s.defaultBusType && currentBusConfigs.find(c => c.presetName === s.defaultBusType)) {
-						defaultBusTypeSelect.value = s.defaultBusType;
-					}
-
-					// 渲染历史前缀
-					renderHistoryPrefixes();
-
-					console.log('[配置] 已加载保存的配置');
-				} else {
-					setDirection(DEFAULT_SETTINGS.wireDirection);
-					currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
-					currentHistoryPrefixes = [];
-					currentEnabledHistoryPrefixes = [];
-					renderBusTypes();
-					updateDefaultBusTypeSelect();
-					renderHistoryPrefixes();
-					console.log('[配置] 使用默认配置');
-				}
-			} catch (e) {
-				console.error('[配置] 加载失败:', e);
-				showToast('配置加载失败', 'error');
-			}
-		}
-
-		function saveSettings() {
-			// 获取当前前缀
-			const currentPrefix = netPrefixInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-			// 获取启用的历史前缀
-			const enabledHistoryPrefixes = [];
-			document.querySelectorAll('.history-prefix-checkbox:checked').forEach(cb => {
-				enabledHistoryPrefixes.push(cb.value);
-			});
-
-			// 收集所有总线自定义前缀
-			currentBusConfigs.forEach(cfg => {
-				if (cfg.prefix && !currentHistoryPrefixes.includes(cfg.prefix)) {
-					currentHistoryPrefixes.push(cfg.prefix);
-				}
-			});
-
-			// 如果当前前缀不在历史中，添加到历史
-			if (currentPrefix && !currentHistoryPrefixes.includes(currentPrefix)) {
-				currentHistoryPrefixes.push(currentPrefix);
-			}
-
-			const settings = {
-				fixedX: parseInt(fixedXInput.value) || DEFAULT_SETTINGS.fixedX,
-				fixedY: parseInt(fixedYInput.value) || DEFAULT_SETTINGS.fixedY,
-				delaySeconds: Math.max(1, Math.min(30, parseInt(delaySecondsInput.value) || DEFAULT_SETTINGS.delaySeconds)),
-				wireSpacing: Math.max(5, Math.min(100, parseInt(wireSpacingInput.value) || DEFAULT_SETTINGS.wireSpacing)),
-				wireLength: Math.max(10, Math.min(500, parseInt(wireLengthInput.value) || DEFAULT_SETTINGS.wireLength)),
-				wireDirection: wireDirectionInput.value || DEFAULT_SETTINGS.wireDirection,
-				shortcutKey: shortcutKeySelect.value || DEFAULT_SETTINGS.shortcutKey,
-				refreshShortcutKey: refreshShortcutKeySelect.value || DEFAULT_SETTINGS.refreshShortcutKey,
-				netPrefix: currentPrefix,
-				historyPrefixes: currentHistoryPrefixes,
-				enabledHistoryPrefixes: enabledHistoryPrefixes,
-				busConfigs: currentBusConfigs,
-				defaultBusType: defaultBusTypeSelect.value || DEFAULT_SETTINGS.defaultBusType,
-				defaultBusIndex: parseInt(defaultBusIndexInput.value) || DEFAULT_SETTINGS.defaultBusIndex
+				currentBusConfigs.push(newType);
+				renderBusTypes();
+				updateDefaultBusTypeSelect();
 			};
 
-			try {
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-				console.log('[配置] 已保存:', settings);
-				showToast('配置已保存', 'success');
-
-				// 更新历史前缀显示
-				currentEnabledHistoryPrefixes = enabledHistoryPrefixes;
-				renderHistoryPrefixes();
-
-				// 保存到 EDA 存储
-				if (typeof eda !== 'undefined' && eda.sys_Storage) {
-					eda.sys_Storage.setExtensionUserConfig('busConfig', {
-						type: settings.defaultBusType,
-						index: settings.defaultBusIndex,
-						spacing: settings.wireSpacing,
-						length: settings.wireLength,
-						direction: settings.wireDirection,
-						shortcutKey: settings.shortcutKey
-					});
+			// 更新默认总线类型下拉框
+			function updateDefaultBusTypeSelect() {
+				const currentValue = defaultBusTypeSelect.value;
+				defaultBusTypeSelect.innerHTML = currentBusConfigs
+					.map((cfg) => `<option value="${cfg.presetName}">${cfg.presetName}</option>`)
+					.join('');
+				// 尝试保持之前的选择
+				if (currentBusConfigs.find((c) => c.presetName === currentValue)) {
+					defaultBusTypeSelect.value = currentValue;
 				}
-			} catch (e) {
-				console.error('[配置] 保存失败:', e);
-				showToast('配置保存失败', 'error');
 			}
-		}
 
-		function resetSettings() {
-			fixedXInput.value = DEFAULT_SETTINGS.fixedX;
-			fixedYInput.value = DEFAULT_SETTINGS.fixedY;
-			delaySecondsInput.value = DEFAULT_SETTINGS.delaySeconds;
-			wireSpacingInput.value = DEFAULT_SETTINGS.wireSpacing;
-			wireLengthInput.value = DEFAULT_SETTINGS.wireLength;
-			shortcutKeySelect.value = DEFAULT_SETTINGS.shortcutKey;
-			refreshShortcutKeySelect.value = DEFAULT_SETTINGS.refreshShortcutKey;
-			netPrefixInput.value = DEFAULT_SETTINGS.netPrefix;
-			defaultBusIndexInput.value = DEFAULT_SETTINGS.defaultBusIndex;
-			setDirection(DEFAULT_SETTINGS.wireDirection);
-			currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
-			currentHistoryPrefixes = [];
-			currentEnabledHistoryPrefixes = [];
-			renderBusTypes();
-			updateDefaultBusTypeSelect();
-			renderHistoryPrefixes();
-			showToast('已恢复默认配置', 'info');
-		}
-
-		// 关闭面板
-		closeBtn.onclick = () => {
-			if (typeof eda !== 'undefined' && eda.sys_IFrame) {
-				eda.sys_IFrame.hideIFrame('mcu-bus-settings-panel');
-			}
-		};
-
-		settingsForm.onsubmit = (e) => {
-			e.preventDefault();
-			saveSettings();
-		};
-
-		resetBtn.onclick = resetSettings;
-
-		// 完善：清除缓存数据
-		const clearCacheBtn = $('clearCacheBtn');
-		clearCacheBtn.onclick = () => {
-			if (confirm('确定要清除插件缓存数据吗？\n\n这将清除：\n- 本地存储的配置（localStorage）\n- EDA 扩展用户配置\n\n清除后需要重新配置！')) {
-				// 清除 localStorage
-				localStorage.removeItem(STORAGE_KEY);
-				
-				// 清除 EDA 扩展配置
-				if (typeof eda !== 'undefined' && eda.sys_Storage) {
-					try {
-						eda.sys_Storage.setExtensionUserConfig('busConfig', {});
-					} catch (e) {}
-				}
-				
-				showToast('缓存已清除，请刷新页面', 'success');
-			}
-		};
-
-		// 完善：导入导出功能
-		const exportModal = new bootstrap.Modal($('exportModal'));
-		const importExportBtn = $('importExportBtn');
-		const exportBtn = $('exportBtn');
-		const importBtn = $('importBtn');
-		const importFile = $('importFile');
-
-		// 打开导入导出模态框
-		importExportBtn.onclick = () => {
-			exportModal.show();
-		};
-
-		// 导出配置
-		exportBtn.onclick = () => {
-			const settings = loadSettings();
-			const jsonStr = JSON.stringify(settings, null, 2);
-			const blob = new Blob([jsonStr], { type: 'application/json' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `bus-helper-config-${new Date().toISOString().slice(0, 10)}.json`;
-			a.click();
-			URL.revokeObjectURL(url);
-			showToast('配置已导出', 'success');
-			exportModal.hide();
-		};
-
-		// 导入配置
-		importBtn.onclick = () => {
-			const file = importFile.files[0];
-			if (!file) {
-				showToast('请选择 JSON 文件', 'warning');
-				return;
-			}
-			const reader = new FileReader();
-			reader.onload = (e) => {
+			function loadSettings() {
 				try {
-					const settings = JSON.parse(e.target.result);
-					// 验证配置格式
-					if (!settings.netPrefix || !settings.busConfigs) {
-						showToast('无效的配置文件', 'error');
-						return;
-					}
-					// 保存配置
-					localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-					showToast('配置已导入，请刷新页面', 'success');
-					exportModal.hide();
-					setTimeout(() => {
-						if (confirm('配置已导入，是否立即刷新页面？')) {
-							location.reload();
+					const saved = localStorage.getItem(STORAGE_KEY);
+					if (saved) {
+						const s = JSON.parse(saved);
+						fixedXInput.value = s.fixedX ?? DEFAULT_SETTINGS.fixedX;
+						fixedYInput.value = s.fixedY ?? DEFAULT_SETTINGS.fixedY;
+						delaySecondsInput.value = s.delaySeconds ?? DEFAULT_SETTINGS.delaySeconds;
+						wireSpacingInput.value = s.wireSpacing ?? DEFAULT_SETTINGS.wireSpacing;
+						wireLengthInput.value = s.wireLength ?? DEFAULT_SETTINGS.wireLength;
+						shortcutKeySelect.value = s.shortcutKey ?? DEFAULT_SETTINGS.shortcutKey;
+						refreshShortcutKeySelect.value = s.refreshShortcutKey ?? DEFAULT_SETTINGS.refreshShortcutKey;
+						netPrefixInput.value = s.netPrefix ?? DEFAULT_SETTINGS.netPrefix;
+						defaultBusIndexInput.value = s.defaultBusIndex ?? DEFAULT_SETTINGS.defaultBusIndex;
+						setDirection(s.wireDirection ?? DEFAULT_SETTINGS.wireDirection);
+
+						// 加载历史前缀
+						currentHistoryPrefixes = s.historyPrefixes || [];
+						currentEnabledHistoryPrefixes = s.enabledHistoryPrefixes || [];
+
+						// 加载总线配置
+						if (s.busConfigs && s.busConfigs.length > 0) {
+							currentBusConfigs = s.busConfigs.map((cfg) => ({
+								name: cfg.name || 'UNKNOWN',
+								presetName: cfg.presetName || cfg.name || 'UNKNOWN',
+								labelId: cfg.labelId || cfg.name || 'UNKNOWN',
+								prefix: cfg.prefix || '',
+								signals: cfg.signals || [],
+								color: cfg.color || '#6c757d',
+							}));
+						} else {
+							currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
 						}
-					}, 500);
-				} catch (err) {
-					showToast('配置文件格式错误：' + err.message, 'error');
+
+						renderBusTypes();
+						updateDefaultBusTypeSelect();
+
+						// 设置默认总线类型
+						if (s.defaultBusType && currentBusConfigs.find((c) => c.presetName === s.defaultBusType)) {
+							defaultBusTypeSelect.value = s.defaultBusType;
+						}
+
+						// 渲染历史前缀
+						renderHistoryPrefixes();
+
+						log('已加载保存的配置', 'success');
+					} else {
+						setDirection(DEFAULT_SETTINGS.wireDirection);
+						currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
+						currentHistoryPrefixes = [];
+						currentEnabledHistoryPrefixes = [];
+						renderBusTypes();
+						updateDefaultBusTypeSelect();
+						renderHistoryPrefixes();
+						log('未找到配置，使用默认值', 'warning');
+					}
+				} catch (e) {
+					console.error('[配置] 加载失败:', e);
+					showToast('配置加载失败', 'error');
+					log('配置加载失败: ' + e.message, 'error');
+				}
+			}
+
+			/**
+			 * 获取当前配置对象
+			 */
+			function getSettings() {
+				// 获取当前前缀
+				const currentPrefix = netPrefixInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+				// 获取启用的历史前缀
+				const enabledHistoryPrefixes = [];
+				document.querySelectorAll('.history-prefix-checkbox:checked').forEach((cb) => {
+					enabledHistoryPrefixes.push(cb.value);
+				});
+
+				return {
+					fixedX: parseInt(fixedXInput.value) || DEFAULT_SETTINGS.fixedX,
+					fixedY: parseInt(fixedYInput.value) || DEFAULT_SETTINGS.fixedY,
+					delaySeconds: Math.max(1, Math.min(30, parseInt(delaySecondsInput.value) || DEFAULT_SETTINGS.delaySeconds)),
+					wireSpacing: Math.max(5, Math.min(100, parseInt(wireSpacingInput.value) || DEFAULT_SETTINGS.wireSpacing)),
+					wireLength: Math.max(10, Math.min(500, parseInt(wireLengthInput.value) || DEFAULT_SETTINGS.wireLength)),
+					wireDirection: wireDirectionInput.value || DEFAULT_SETTINGS.wireDirection,
+					shortcutKey: shortcutKeySelect.value || DEFAULT_SETTINGS.shortcutKey,
+					refreshShortcutKey: refreshShortcutKeySelect.value || DEFAULT_SETTINGS.refreshShortcutKey,
+					netPrefix: currentPrefix,
+					historyPrefixes: currentHistoryPrefixes,
+					enabledHistoryPrefixes: enabledHistoryPrefixes,
+					busConfigs: currentBusConfigs,
+					defaultBusType: defaultBusTypeSelect.value || DEFAULT_SETTINGS.defaultBusType,
+					defaultBusIndex: parseInt(defaultBusIndexInput.value) || DEFAULT_SETTINGS.defaultBusIndex,
+				};
+			}
+
+			function saveSettings() {
+				// 获取当前前缀
+				const currentPrefix = netPrefixInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+				// 获取启用的历史前缀
+				const enabledHistoryPrefixes = [];
+				document.querySelectorAll('.history-prefix-checkbox:checked').forEach((cb) => {
+					enabledHistoryPrefixes.push(cb.value);
+				});
+
+				// 收集所有总线自定义前缀
+				currentBusConfigs.forEach((cfg) => {
+					if (cfg.prefix && !currentHistoryPrefixes.includes(cfg.prefix)) {
+						currentHistoryPrefixes.push(cfg.prefix);
+					}
+				});
+
+				// 如果当前前缀不在历史中，添加到历史
+				if (currentPrefix && !currentHistoryPrefixes.includes(currentPrefix)) {
+					currentHistoryPrefixes.push(currentPrefix);
+				}
+
+				// 检测快捷键是否更改
+				const oldSettings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+				const oldShortcutKey = oldSettings.shortcutKey || '1';
+				const newShortcutKey = shortcutKeySelect.value || DEFAULT_SETTINGS.shortcutKey;
+				const shortcutKeyChanged = oldShortcutKey !== newShortcutKey;
+
+				const settings = {
+					fixedX: parseInt(fixedXInput.value) || DEFAULT_SETTINGS.fixedX,
+					fixedY: parseInt(fixedYInput.value) || DEFAULT_SETTINGS.fixedY,
+					delaySeconds: Math.max(1, Math.min(30, parseInt(delaySecondsInput.value) || DEFAULT_SETTINGS.delaySeconds)),
+					wireSpacing: Math.max(5, Math.min(100, parseInt(wireSpacingInput.value) || DEFAULT_SETTINGS.wireSpacing)),
+					wireLength: Math.max(10, Math.min(500, parseInt(wireLengthInput.value) || DEFAULT_SETTINGS.wireLength)),
+					wireDirection: wireDirectionInput.value || DEFAULT_SETTINGS.wireDirection,
+					shortcutKey: newShortcutKey,
+					refreshShortcutKey: refreshShortcutKeySelect.value || DEFAULT_SETTINGS.refreshShortcutKey,
+					netPrefix: currentPrefix,
+					historyPrefixes: currentHistoryPrefixes,
+					enabledHistoryPrefixes: enabledHistoryPrefixes,
+					busConfigs: currentBusConfigs,
+					defaultBusType: defaultBusTypeSelect.value || DEFAULT_SETTINGS.defaultBusType,
+					defaultBusIndex: parseInt(defaultBusIndexInput.value) || DEFAULT_SETTINGS.defaultBusIndex,
+				};
+
+				try {
+					localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+					console.log('[配置] 已保存:', settings);
+					showToast('配置已保存', 'success');
+					log('配置已保存', 'success');
+
+					// 如果快捷键更改，通知主面板注销旧快捷键
+					if (shortcutKeyChanged) {
+						// 尝试直接注销旧快捷键（如果 EDA API 可用）
+						if (typeof eda !== 'undefined' && eda.sys_ShortcutKey) {
+							try {
+								eda.sys_ShortcutKey.unregisterShortcutKey([oldShortcutKey]);
+								log(`已注销旧快捷键: ${oldShortcutKey}`, 'success');
+							} catch (err) {
+								console.error('[设置] 注销旧快捷键失败:', err);
+							}
+						}
+
+						// 同时通过 localStorage 通知主面板
+						localStorage.setItem(
+							'mcu-bus-helper-shortcut-changed',
+							JSON.stringify({
+								oldKey: oldShortcutKey,
+								newKey: newShortcutKey,
+								timestamp: Date.now(),
+							}),
+						);
+						log(`快捷键已更改: ${oldShortcutKey} → ${newShortcutKey}，请在主面板重新激活`, 'warning');
+						showToast(`快捷键已更改，请在主面板重新激活`, 'warning');
+					}
+
+					// 更新历史前缀显示
+					currentEnabledHistoryPrefixes = settings.enabledHistoryPrefixes;
+					renderHistoryPrefixes();
+
+					// 保存到 EDA 存储
+					if (typeof eda !== 'undefined' && eda.sys_Storage) {
+						eda.sys_Storage.setExtensionUserConfig('busConfig', {
+							type: settings.defaultBusType,
+							index: settings.defaultBusIndex,
+							spacing: settings.wireSpacing,
+							length: settings.wireLength,
+							direction: settings.wireDirection,
+							shortcutKey: settings.shortcutKey,
+						});
+					}
+				} catch (e) {
+					console.error('[配置] 保存失败:', e);
+					showToast('配置保存失败', 'error');
+					log('配置保存失败: ' + e.message, 'error');
+				}
+			}
+
+			function resetSettings() {
+				fixedXInput.value = DEFAULT_SETTINGS.fixedX;
+				fixedYInput.value = DEFAULT_SETTINGS.fixedY;
+				delaySecondsInput.value = DEFAULT_SETTINGS.delaySeconds;
+				wireSpacingInput.value = DEFAULT_SETTINGS.wireSpacing;
+				wireLengthInput.value = DEFAULT_SETTINGS.wireLength;
+				shortcutKeySelect.value = DEFAULT_SETTINGS.shortcutKey;
+				refreshShortcutKeySelect.value = DEFAULT_SETTINGS.refreshShortcutKey;
+				netPrefixInput.value = DEFAULT_SETTINGS.netPrefix;
+				defaultBusIndexInput.value = DEFAULT_SETTINGS.defaultBusIndex;
+				setDirection(DEFAULT_SETTINGS.wireDirection);
+				currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
+				currentHistoryPrefixes = [];
+				currentEnabledHistoryPrefixes = [];
+				renderBusTypes();
+				updateDefaultBusTypeSelect();
+				renderHistoryPrefixes();
+				showToast('已恢复默认配置', 'info');
+				log('已恢复默认配置', 'info');
+			}
+
+			settingsForm.onsubmit = (e) => {
+				e.preventDefault();
+				saveSettings();
+			};
+
+			resetBtn.onclick = resetSettings;
+
+			// 完善：清除缓存数据
+			const clearCacheBtn = $('clearCacheBtn');
+			clearCacheBtn.onclick = () => {
+				if (
+					confirm('确定要清除插件缓存数据吗？\n\n这将清除：\n- 本地存储的配置（localStorage）\n- EDA 扩展用户配置\n\n清除后需要重新配置！')
+				) {
+					// 清除 localStorage
+					localStorage.removeItem(STORAGE_KEY);
+					localStorage.removeItem(LOG_STORAGE_KEY);
+
+					// 清除 EDA 扩展配置
+					if (typeof eda !== 'undefined' && eda.sys_Storage) {
+						try {
+							eda.sys_Storage.setExtensionUserConfig('busConfig', {});
+						} catch (e) {}
+					}
+
+					showToast('缓存已清除，请刷新页面', 'success');
+					renderDebugLogs(); // 更新日志显示
 				}
 			};
-			reader.readAsText(file);
-		};
 
-		// 初始化
-		loadSettings();
-	</script>
-</body>
+			// 完善：导入导出功能
+			const exportModal = new bootstrap.Modal($('exportModal'));
+			const importExportBtn = $('importExportBtn');
+			const exportBtn = $('exportBtn');
+			const importBtn = $('importBtn');
+			const importFile = $('importFile');
+
+			// 打开导入导出模态框
+			importExportBtn.onclick = () => {
+				exportModal.show();
+			};
+
+			// 导出配置
+			exportBtn.onclick = () => {
+				const settings = getSettings();
+				const jsonStr = JSON.stringify(settings, null, 2);
+				const blob = new Blob([jsonStr], { type: 'application/json' });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = `bus-helper-config-${new Date().toISOString().slice(0, 10)}.json`;
+				a.click();
+				URL.revokeObjectURL(url);
+				showToast('配置已导出', 'success');
+				exportModal.hide();
+			};
+
+			// 导入配置 - 点击按钮触发文件选择器
+			importBtn.onclick = () => {
+				importFile.click();
+			};
+
+			// 文件选择后读取并导入
+			importFile.onchange = () => {
+				const file = importFile.files[0];
+				if (!file) {
+					return;
+				}
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					try {
+						const settings = JSON.parse(e.target.result);
+						// 验证配置格式
+						if (!settings.netPrefix || !settings.busConfigs) {
+							showToast('无效的配置文件', 'error');
+							return;
+						}
+						// 保存配置
+						localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+						showToast('配置已导入，请刷新页面', 'success');
+						exportModal.hide();
+						setTimeout(() => {
+							if (confirm('配置已导入，是否立即刷新页面？')) {
+								location.reload();
+							}
+						}, 500);
+					} catch (err) {
+						showToast('配置文件格式错误：' + err.message, 'error');
+					}
+				};
+				reader.readAsText(file);
+			};
+
+			// 初始化
+			function init() {
+				// 渲染已有的日志
+				renderDebugLogs();
+
+				// 检查是否存在配置，没有则询问用户是否初始化
+				if (!hasExistingConfig()) {
+					const confirmed = confirm(
+						'欢迎使用总线助手！\n\n' +
+							'检测到这是首次使用，是否初始化默认配置？\n\n' +
+							'点击"确定"初始化配置\n' +
+							'点击"取消"将使用临时配置（不会保存）',
+					);
+					if (confirmed) {
+						initializeConfig();
+						showToast('配置已初始化', 'success');
+						log('配置已初始化', 'success');
+					} else {
+						showToast('使用临时配置', 'warning');
+						log('用户取消初始化，使用临时配置', 'warning');
+					}
+				} else {
+					log('设置页面已加载', 'info');
+				}
+				loadSettings();
+			}
+
+			init();
+		</script>
+	</body>
 </html>

@@ -1,12 +1,12 @@
 {
-	"name": "lovefindersereis-antifragile-bus-helper",
+	"name": "lovefinderseries-antifragile-bus-helper",
 	"uuid": "b2c3d4e5f6789012b3c4d5e6f7890123",
 	"displayName": "Antifragile-总线助手",
 	"description": "[LoveFinderSeries-705_Antifragile]快速创建和管理各类总线网络标签，预设多种总线，高度自定义，大幅提升原理图开发效率",
-	"version": "1.0.0",
+	"version": "26.3.10",
 	"publisher": "",
 	"engines": {
-		"eda": "^2.3.0"
+		"eda": "^3.0.0"
 	},
 	"license": "Apache-2.0",
 	"repository": {
@@ -14,16 +14,7 @@
 		"url": ""
 	},
 	"categories": "PCB Design",
-	"keywords": [
-		"总线",
-		"Bus",
-		"I2C",
-		"SPI",
-		"UART",
-		"CAN",
-		"网络标签",
-		"原理图"
-	],
+	"keywords": ["总线", "Bus", "I2C", "SPI", "UART", "CAN", "网络标签", "原理图"],
 	"images": {
 		"logo": "./images/logo.png"
 	},
@@ -36,16 +27,16 @@
 		"sch": [
 			{
 				"id": "antifragile-bus-helper",
-				"title": "总线助手",
+				"title": "总线管理",
 				"menuItems": [
 					{
 						"id": "open-helper",
-						"title": "总线助手工具",
+						"title": "打开总线助手",
 						"registerFn": "openBusHelper"
 					},
 					{
 						"id": "open-settings",
-						"title": "总线助手配置",
+						"title": "设置",
 						"registerFn": "openSettings"
 					}
 				]
