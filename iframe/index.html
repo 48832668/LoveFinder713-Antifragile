@@ -1005,10 +1005,8 @@
 								}
 							}
 
-							// 只保存引脚数>=4的元件
-							if (compInfo.pins.length >= 4) {
-								allComponents.push(compInfo);
-							}
+							// 保存元件（不再限制引脚数量，因为电源总线可能只有3个引脚的LDO）
+							allComponents.push(compInfo);
 						} catch (e) {}
 					}
 				} catch (e) {
