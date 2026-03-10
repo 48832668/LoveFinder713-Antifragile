@@ -2,7 +2,7 @@
 	"name": "lovefinderseries-antifragile-bus-helper",
 	"uuid": "b2c3d4e5f6789012b3c4d5e6f7890123",
 	"displayName": "Antifragile-总线助手",
-	"description": "[LoveFinderSeries-705_Antifragile]快速创建和管理各类总线网络标签，预设多种总线，高度自定义，大幅提升原理图开发效率",
+	"description": "[LoveFinderSeries-705]承包你的各类信号总线和电源总线的网络标签辅助，快速创建和管理各类总线网络标签，预设多种总线，高度自定义，大幅提升原理图开发效率",
 	"version": "26.3.10",
 	"publisher": "",
 	"engines": {

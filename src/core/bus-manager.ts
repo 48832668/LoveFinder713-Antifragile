@@ -3,9 +3,8 @@
  *
  * 提供总线的创建、扫描、统计等核心功能
  */
-
-import type { BusInstance, BusStatistics, ScanResult, CreateBusOptions } from './types';
-import { BUS_CONFIGS, getBusConfig, getBusPrefix, generateNetName, getBusMaxInstances, isPrefixBlacklisted, getBlacklistMessage, getBusLabelId } from './bus-config';
+import { BUS_CONFIGS, generateNetName, getBlacklistMessage, getBusConfig, getBusMaxInstances, isPrefixBlacklisted } from './bus-config';
+import type { BusInstance, BusStatistics, CreateBusOptions, ScanResult } from './types';
 
 /**
  * 总线管理器类
@@ -15,18 +14,33 @@ export class BusManager {
 	private busCache: Map<string, BusInstance> = new Map();
 
 	/** 缓存时间 */
-	private cacheTime: number = 0;
+	private cacheTime = 0;
 
 	/** 缓存有效期（毫秒） */
-	private cacheTTL: number = 5000;
+	private cacheTTL = 5000;
+
+	/**
+	 * 获取总线配置列表
+	 */
+	public getBusConfigs() {
+		return BUS_CONFIGS;
+	}
+
+	/**
+	 * 清除缓存
+	 */
+	public clearCache(): void {
+		this.busCache.clear();
+		this.cacheTime = 0;
+	}
 
 	/**
 	 * 扫描原理图中已有的总线网络
 	 *
 	 * 通过解析网络标签名称来识别总线实例
-	 * 支持格式：{前缀}_{标识名}{序号}_{信号名}
+	 * 支持格式：\{前缀\}_\{标识名\}\{序号\}_\{信号名\}
 	 */
-	async scanExistingBuses(): Promise<ScanResult> {
+	public async scanExistingBuses(): Promise<ScanResult> {
 		const buses: BusInstance[] = [];
 		const unknownNets: string[] = [];
 		const statistics: BusStatistics = {};
@@ -96,7 +110,6 @@ export class BusManager {
 				this.busCache.set(`${bus.busType}_${bus.index}`, bus);
 			});
 			this.cacheTime = Date.now();
-
 		} catch (err) {
 			console.error('[总线助手] 扫描总线失败:', err);
 		}
@@ -105,48 +118,9 @@ export class BusManager {
 	}
 
 	/**
-	 * 解析网络名称
-	 *
-	 * 格式：{前缀}_{标识名}{序号}_{信号名}
-	 * 例如：SYS_IIC1_SDA -> { busType: 'IIC', index: 1, signal: 'SDA' }
-	 */
-	private parseNetName(netName: string): { busType: string; index: number; signal: string } | null {
-		// 匹配格式：XXX_YYYN_SIGNAL
-		const match = netName.match(/^([A-Z]+)_([A-Z]+)(\d+)_([A-Z0-9]+)$/);
-
-		if (!match) {
-			return null;
-		}
-
-		const prefix = match[1];
-		const labelId = match[2];
-		const index = parseInt(match[3], 10);
-		const signal = match[4];
-
-		// 查找对应的总线配置（通过 labelId 匹配）
-		const busConfig = BUS_CONFIGS.find((config) => config.labelId === labelId);
-
-		if (!busConfig) {
-			return null;
-		}
-
-		// 验证信号是否属于该总线
-		const signalConfig = busConfig.signals.find((s) => s.name === signal);
-		if (!signalConfig) {
-			return null;
-		}
-
-		return {
-			busType: busConfig.type,
-			index,
-			signal,
-		};
-	}
-
-	/**
 	 * 获取总线统计信息
 	 */
-	async getBusStatistics(): Promise<BusStatistics> {
+	public async getBusStatistics(): Promise<BusStatistics> {
 		// 检查缓存是否有效
 		if (Date.now() - this.cacheTime < this.cacheTTL && this.busCache.size > 0) {
 			const stats: BusStatistics = {};
@@ -164,8 +138,8 @@ export class BusManager {
 	/**
 	 * 获取下一个可用的总线序号
 	 */
-	async getNextAvailableIndex(busType: string): Promise<number> {
-		const stats = await this.scanExistingBuses();
+	public async getNextAvailableIndex(busType: string): Promise<number> {
+		await this.scanExistingBuses();
 		const maxInstances = getBusMaxInstances(busType);
 
 		// 找到已使用的序号
@@ -190,7 +164,7 @@ export class BusManager {
 	/**
 	 * 检查总线实例是否已存在
 	 */
-	async isBusExists(busType: string, index: number): Promise<boolean> {
+	public async isBusExists(busType: string, index: number): Promise<boolean> {
 		await this.scanExistingBuses();
 		return this.busCache.has(`${busType}_${index}`);
 	}
@@ -198,7 +172,7 @@ export class BusManager {
 	/**
 	 * 验证前缀是否合法（不在黑名单中）
 	 */
-	validatePrefix(prefix: string): { valid: boolean; message: string } {
+	public validatePrefix(prefix: string): { valid: boolean; message: string } {
 		if (isPrefixBlacklisted(prefix)) {
 			return {
 				valid: false,
@@ -214,12 +188,12 @@ export class BusManager {
 	 * 注意：由于 API 限制，此方法返回网络名称列表，
 	 * 实际创建需要用户在界面上点击放置
 	 */
-	async createBusNetwork(options: CreateBusOptions & { globalPrefix?: string }): Promise<{
+	public async createBusNetwork(options: CreateBusOptions & { globalPrefix?: string }): Promise<{
 		success: boolean;
 		netNames: string[];
 		message: string;
 	}> {
-		const { busType, index, createType = 'netlabel', globalPrefix = 'SYS' } = options;
+		const { busType, index, globalPrefix = 'SYS' } = options;
 
 		// 验证总线类型
 		const config = getBusConfig(busType);
@@ -252,9 +226,7 @@ export class BusManager {
 		}
 
 		// 生成网络名称（使用 labelId）
-		const netNames = config.signals
-			.filter((s) => !s.optional)
-			.map((signal) => generateNetName(busType, index, signal.name, globalPrefix));
+		const netNames = config.signals.filter((s) => !s.optional).map((signal) => generateNetName(busType, index, signal.name, globalPrefix));
 
 		return {
 			success: true,
@@ -264,20 +236,40 @@ export class BusManager {
 	}
 
 	/**
-	 * 获取总线配置列表
+	 * 解析网络名称
+	 *
+	 * 格式：\{前缀\}_\{标识名\}\{序号\}_\{信号名\}
+	 * 例如：SYS_IIC1_SDA 解析为 \{ busType: 'IIC', index: 1, signal: 'SDA' \}
 	 */
-	getBusConfigs() {
-		return BUS_CONFIGS;
-	}
+	private parseNetName(netName: string): { busType: string; index: number; signal: string } | null {
+		// 匹配格式：XXX_YYYN_SIGNAL
+		const match = netName.match(/^([A-Z]+)_([A-Z]+)(\d+)_([A-Z0-9]+)$/);
 
-	/**
-	 * 清除缓存
-	 */
-	clearCache(): void {
-		this.busCache.clear();
-		this.cacheTime = 0;
+		if (!match) {
+			return null;
+		}
+
+		const labelId = match[2];
+		const index = parseInt(match[3], 10);
+		const signal = match[4];
+
+		// 查找对应的总线配置（通过 labelId 匹配）
+		const busConfig = BUS_CONFIGS.find((config) => config.labelId === labelId);
+
+		if (!busConfig) {
+			return null;
+		}
+
+		// 验证信号是否属于该总线
+		const signalConfig = busConfig.signals.find((s) => s.name === signal);
+		if (!signalConfig) {
+			return null;
+		}
+
+		return {
+			busType: busConfig.type,
+			index,
+			signal,
+		};
 	}
 }
-
-// 导出单例
-export const busManager = new BusManager();

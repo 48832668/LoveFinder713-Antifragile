@@ -100,7 +100,7 @@
 				</div>
 			</div>
 
-			<!-- 已有总线 -->
+			<!-- 信号总线 -->
 			<div class="card mb-2">
 				<div
 					class="card-header py-1 px-2 d-flex justify-content-between align-items-center"
@@ -108,7 +108,7 @@
 					data-bs-target="#busListCollapse"
 					style="cursor: pointer"
 				>
-					<small class="fw-bold">已有总线 <span id="busCountBadge" class="badge bg-secondary ms-1">0</span></small>
+					<small class="fw-bold">信号总线 <span id="busCountBadge" class="badge bg-secondary ms-1">0</span></small>
 					<span class="collapse-icon">▼</span>
 				</div>
 				<div class="collapse show" id="busListCollapse">
@@ -140,6 +140,11 @@
 				</div>
 				<div class="collapse show" id="powerListCollapse">
 					<div class="card-body py-2 px-2">
+						<div class="mb-2 d-flex gap-2">
+							<input type="text" class="form-control form-control-sm flex-grow-1" id="powerSearchInput" placeholder="搜索电源..." />
+							<button class="btn btn-outline-secondary btn-sm" id="powerSortBtn" type="button" title="按名称排序">↕️</button>
+							<button class="btn btn-outline-success btn-sm" id="powerCreateBtn" type="button" title="新建电源轨道">+</button>
+						</div>
 						<div id="powerListContainer">
 							<div class="text-center text-muted">
 								<small>暂无电源网络</small>
@@ -213,6 +218,38 @@
 				</div>
 			</div>
 
+			<!-- 新建电源轨道模态框 -->
+			<div class="modal fade" id="powerCreateModal" tabindex="-1">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header py-2">
+							<h6 class="modal-title">新建电源轨道</h6>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+						</div>
+						<div class="modal-body py-2">
+							<div class="mb-2">
+								<label class="form-label small mb-1">电源名称</label>
+								<input type="text" class="form-control form-control-sm" id="powerNameInput" placeholder="如: SYS、MCU、VCC" />
+							</div>
+							<div class="mb-2">
+								<label class="form-label small mb-1">电压值</label>
+								<input type="text" class="form-control form-control-sm" id="powerVoltageInput" placeholder="如: 3V3、5V、12V" />
+							</div>
+							<div class="mb-2">
+								<label class="form-label small mb-1">网络标签预览</label>
+								<div id="powerPreview" class="p-2 bg-light border rounded">
+									<code class="text-muted">PW_名称_电压</code>
+								</div>
+							</div>
+						</div>
+						<div class="modal-footer py-2">
+							<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+							<button type="button" class="btn btn-primary btn-sm" id="powerSaveBtn">保存</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
 			<!-- 元件详情模态框 -->
 			<div class="modal fade" id="compDetailModal" tabindex="-1">
 				<div class="modal-dialog modal-dialog-centered modal-lg">
@@ -258,7 +295,7 @@
 				{ name: 'SPI', presetName: 'SPI', labelId: 'SPI', prefix: '', signals: ['MOSI', 'MISO', 'SCK', 'CS'], color: '#198754' },
 				{ name: 'UART', presetName: 'UART', labelId: 'UART', prefix: '', signals: ['TX', 'RX'], color: '#ffc107' },
 				{ name: 'CAN', presetName: 'CAN', labelId: 'CAN', prefix: '', signals: ['CANH', 'CANL'], color: '#dc3545' },
-				{ name: 'SDIO', presetName: 'SDIO', labelId: 'SDIO', prefix: '', signals: ['CLK', 'CMD', 'D0', 'D1', 'D2', 'D3'], color: '#6f42c1' }
+				{ name: 'SDIO', presetName: 'SDIO', labelId: 'SDIO', prefix: '', signals: ['CLK', 'CMD', 'D0', 'D1', 'D2', 'D3'], color: '#6f42c1' },
 			];
 
 			// 默认配置
@@ -276,7 +313,8 @@
 				enabledHistoryPrefixes: [],
 				busConfigs: DEFAULT_BUS_CONFIGS,
 				defaultBusType: 'I2C',
-				defaultBusIndex: 1
+				defaultBusIndex: 1,
+				customPowerNets: [], // 用户自定义的电源轨道
 			};
 
 			/**
@@ -335,13 +373,13 @@
 				const settings = loadSettings();
 				if (settings.busConfigs && settings.busConfigs.length > 0) {
 					// 兼容旧格式，转换为新格式
-					return settings.busConfigs.map(cfg => ({
+					return settings.busConfigs.map((cfg) => ({
 						name: cfg.name || cfg.type || 'UNKNOWN',
 						presetName: cfg.presetName || cfg.name || cfg.type || 'UNKNOWN',
 						labelId: cfg.labelId || cfg.name || cfg.type || 'UNKNOWN',
 						prefix: cfg.prefix || '',
 						signals: cfg.signals || [],
-						color: cfg.color || '#6c757d'
+						color: cfg.color || '#6c757d',
 					}));
 				}
 				return DEFAULT_BUS_CONFIGS;
@@ -375,7 +413,7 @@
 				const settings = loadSettings();
 				const prefixes = [settings.netPrefix || 'SYS'];
 				if (settings.enabledHistoryPrefixes) {
-					settings.enabledHistoryPrefixes.forEach(p => {
+					settings.enabledHistoryPrefixes.forEach((p) => {
 						if (!prefixes.includes(p)) prefixes.push(p);
 					});
 				}
@@ -395,7 +433,7 @@
 			let busSearchText = ''; // 总线搜索文本
 			let compSearchText = ''; // 元件搜索文本
 
-			const $ = id => document.getElementById(id);
+			const $ = (id) => document.getElementById(id);
 			const busTypeSelect = $('busTypeSelect');
 			const busIndexInput = $('busIndexInput');
 			const spacingInput = $('spacingInput');
@@ -415,15 +453,22 @@
 			const progressText = $('progressText');
 			const busDetailModal = new bootstrap.Modal($('busDetailModal'));
 			const compDetailModal = new bootstrap.Modal($('compDetailModal'));
+			const powerCreateModal = new bootstrap.Modal($('powerCreateModal'));
 
 			// 修复模态框焦点警告
 			$('busDetailModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
 			$('compDetailModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
+			$('powerCreateModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
 
-			function toast(msg, type = 'info') {
+			function showToast(msg, type = 'info') {
 				if (edaApi?.sys_Message) {
-					const t = { success: ESYS_ToastMessageType.SUCCESS, error: ESYS_ToastMessageType.ERROR, warning: ESYS_ToastMessageType.WARNING }[type] || ESYS_ToastMessageType.INFO;
-					try { edaApi.sys_Message.showToastMessage(msg, t, 3); } catch (e) {}
+					const t =
+						{ success: ESYS_ToastMessageType.SUCCESS, error: ESYS_ToastMessageType.ERROR, warning: ESYS_ToastMessageType.WARNING }[
+							type
+						] || ESYS_ToastMessageType.INFO;
+					try {
+						edaApi.sys_Message.showToastMessage(msg, t, 3);
+					} catch (e) {}
 				}
 			}
 
@@ -464,7 +509,7 @@
 			 * @param {string} msg - 日志消息
 			 * @param {string} type - 日志类型: info, success, warning, error
 			 */
-			function log(msg, type = 'info') {
+			function addDebugLog(msg, type = 'info') {
 				const now = new Date();
 				const time = now.toLocaleTimeString('zh-CN', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
 
@@ -498,12 +543,16 @@
 					return;
 				}
 
-				debugLogContainer.innerHTML = logs.map(item => `
+				debugLogContainer.innerHTML = logs
+					.map(
+						(item) => `
 					<div class="debug-log-item">
 						<span class="debug-log-time">${item.time}</span>
 						<span class="debug-log-${item.type}">[${item.source || '主面板'}] ${escapeHtml(item.msg)}</span>
 					</div>
-				`).join('');
+				`,
+					)
+					.join('');
 
 				logCountEl.textContent = `${logs.length} 条记录`;
 
@@ -535,8 +584,8 @@
 			// 格式:
 			// - 无自定义前缀: {全局前缀}_{总线名称}{序号}_{信号}
 			// - 有自定义前缀: {自定义前缀}_{总线名称}{序号}_{信号}
-			function netName(busName, idx, sig) {
-				const cfg = BUS_CONFIGS.find(c => c.presetName === busName);
+			function generateBusNetName(busName, idx, sig) {
+				const cfg = BUS_CONFIGS.find((c) => c.presetName === busName);
 				const globalPrefix = getNetPrefix();
 				// 如果总线有自定义前缀则完全替代全局前缀
 				const prefix = cfg?.prefix || globalPrefix;
@@ -551,8 +600,8 @@
 				// 收集所有可能的前缀：全局前缀 + 历史前缀 + 所有总线的自定义前缀
 				const allPrefixes = new Set();
 				allPrefixes.add(getNetPrefix());
-				getEnabledPrefixes().forEach(p => allPrefixes.add(p));
-				BUS_CONFIGS.forEach(c => {
+				getEnabledPrefixes().forEach((p) => allPrefixes.add(p));
+				BUS_CONFIGS.forEach((c) => {
 					if (c.prefix) allPrefixes.add(c.prefix);
 				});
 
@@ -562,7 +611,7 @@
 					if (m) {
 						const busName = m[1];
 						// 通过 labelId 匹配总线名称
-						const cfg = BUS_CONFIGS.find(c => c.labelId === busName);
+						const cfg = BUS_CONFIGS.find((c) => c.labelId === busName);
 						if (cfg && cfg.signals.includes(m[3])) {
 							return { type: cfg.presetName, idx: +m[2], signal: m[3] };
 						}
@@ -576,16 +625,19 @@
 
 			/**
 			 * 解析供电网络名称
-			 * 格式: PW_{电压值}，如 PW_3V3、PW_5V、PW_12V
+			 * 格式: PW_{名称}_{电压值}
+			 * 例如: PW_SYS_3V3、PW_MCU_5V、PW_12V
 			 * 电压值格式: 数字 + V + 可选小数部分，如 3V3=3.3V, 5V=5V, 12V=12V
 			 */
 			function parsePowerNetName(net) {
-				// 匹配格式: PW_{电压值}
+				// 匹配格式: PW_{名称}_{电压值}
+				// 名称: 字母数字组合，如 SYS, MCU, VCC
 				// 电压值: 数字 + V + 可选数字，如 3V3, 5V, 12V, 1V8
-				const regex = /^PW_([0-9]+V[0-9]*)$/i;
+				const regex = /^PW_([A-Za-z0-9]+)_([0-9]+V[0-9]*)$/i;
 				const m = net.match(regex);
 				if (m) {
-					const voltageStr = m[1].toUpperCase();
+					const powerName = m[1].toUpperCase(); // 电源名称（如 SYS）
+					const voltageStr = m[2].toUpperCase(); // 电压值字符串
 					// 解析电压值
 					let voltage = voltageStr;
 					// 将 3V3 转换为 3.3V 显示
@@ -599,10 +651,15 @@
 							voltage = `${major}V`;
 						}
 					}
-					return { name: net, voltage, voltageStr };
+					return { name: net, voltage, voltageStr, powerName };
 				}
 				return null;
 			}
+
+			// 电源轨道相关变量
+			let powerSearchText = ''; // 电源搜索文本
+			let powerSortAscending = true; // 电源排序方向（升序）
+			let customPowerNets = []; // 用户自定义的电源轨道
 
 			// 注册快捷键
 			let shortcutKeyRegistered = false; // 快捷键是否已注册
@@ -642,8 +699,8 @@
 						ESYS_ShortcutKeyEffectiveEditorScene.EDITOR,
 						ESYS_ShortcutKeyEffectiveEditorScene.LOCAL,
 						ESYS_ShortcutKeyEffectiveEditorScene.PLACE,
-						ESYS_ShortcutKeyEffectiveEditorScene.SELECT_CANVAS
-					]
+						ESYS_ShortcutKeyEffectiveEditorScene.SELECT_CANVAS,
+					],
 				);
 
 				// 更新状态
@@ -651,7 +708,7 @@
 				registeredShortcutKey = key;
 
 				console.log(`[总线助手] 快捷键 ${key} 注册完成`);
-				toast(`快捷键 ${key} 已注册`, 'success');
+				showToast(`快捷键 ${key} 已注册`, 'success');
 				updateShortcutButtonHint();
 			}
 
@@ -688,11 +745,16 @@
 			// 根据导线方向计算网络标签旋转角度（标签朝向导线起点）
 			function getNetPortRotation(direction) {
 				switch (direction) {
-					case 'right': return 180; // 导线向右，标签朝左
-					case 'left': return 0;    // 导线向左，标签朝右
-					case 'down': return 270;  // 导线向下，标签朝上
-					case 'up': return 90;     // 导线向上，标签朝下
-					default: return 180;
+					case 'right':
+						return 180; // 导线向右，标签朝左
+					case 'left':
+						return 0; // 导线向左，标签朝右
+					case 'down':
+						return 270; // 导线向下，标签朝上
+					case 'up':
+						return 90; // 导线向上，标签朝下
+					default:
+						return 180;
 				}
 			}
 
@@ -704,11 +766,11 @@
 				const idx = +busIndexInput.value || 1;
 
 				if (!type) {
-					toast('请先选择总线类型', 'warning');
+					showToast('请先选择总线类型', 'warning');
 					return;
 				}
 
-				const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+				const cfg = BUS_CONFIGS.find((c) => c.presetName === type);
 				const settings = loadSettings();
 				const spacing = +spacingInput.value || settings.wireSpacing || 10;
 				const length = settings.wireLength || 50;
@@ -720,7 +782,7 @@
 					console.log('[总线助手] 鼠标位置:', pos);
 
 					if (!pos) {
-						toast('无法获取鼠标位置', 'error');
+						showToast('无法获取鼠标位置', 'error');
 						return;
 					}
 
@@ -728,7 +790,7 @@
 					let ok = 0;
 
 					for (let i = 0; i < cfg.signals.length; i++) {
-						const name = netName(type, idx, cfg.signals[i]);
+						const name = generateBusNetName(type, idx, cfg.signals[i]);
 						try {
 							const coords = getWireCoords(pos.x, pos.y, i, spacing, length, direction);
 							const w = await edaApi.sch_PrimitiveWire.create(coords, name);
@@ -740,7 +802,7 @@
 						} catch (e) {
 							console.error('创建导线失败:', e);
 						}
-						await new Promise(r => setTimeout(r, 30));
+						await new Promise((r) => setTimeout(r, 30));
 					}
 
 					if (ids.length) {
@@ -750,37 +812,43 @@
 						} catch (e) {}
 					}
 
-					toast(`创建 ${cfg.name}#${idx}，成功 ${ok}/${cfg.signals.length} 个`, ok === cfg.signals.length ? 'success' : 'warning');
+					showToast(`创建 ${cfg.name}#${idx}，成功 ${ok}/${cfg.signals.length} 个`, ok === cfg.signals.length ? 'success' : 'warning');
 					// 快捷键创建只在当前图页，使用快速刷新
-					await loadCurrentPageOnly('快捷键创建');
+					await loadCurrentSchematicPage('快捷键创建');
 				} catch (e) {
 					console.error('创建总线失败:', e);
-					toast(`创建失败: ${e}`, 'error');
+					showToast(`创建失败: ${e}`, 'error');
 				}
 			}
 
-			async function init() {
-				if (!edaApi) { toast('无法获取 EDA API', 'error'); return; }
+			async function initMainPanel() {
+				if (!edaApi) {
+					showToast('无法获取 EDA API', 'error');
+					return;
+				}
 				try {
 					const doc = await edaApi.dmt_SelectControl.getCurrentDocumentInfo();
-					if (!doc || doc.documentType !== 1) { toast('请在原理图编辑器中使用', 'error'); return; }
+					if (!doc || doc.documentType !== 1) {
+						showToast('请在原理图编辑器中使用', 'error');
+						return;
+					}
 				} catch (e) {}
 
 				// 检查是否存在配置，没有则询问用户是否初始化
 				if (!hasExistingConfig()) {
 					const confirmed = confirm(
 						'欢迎使用总线助手！\n\n' +
-						'检测到这是首次使用，是否初始化默认配置？\n\n' +
-						'点击"确定"初始化配置\n' +
-						'点击"取消"将使用临时配置（不会保存）'
+							'检测到这是首次使用，是否初始化默认配置？\n\n' +
+							'点击"确定"初始化配置\n' +
+							'点击"取消"将使用临时配置（不会保存）',
 					);
 					if (confirmed) {
 						initializeConfig();
-						toast('配置已初始化', 'success');
-						log('配置已初始化', 'success');
+						showToast('配置已初始化', 'success');
+						addDebugLog('配置已初始化', 'success');
 					} else {
-						toast('使用临时配置', 'warning');
-						log('用户取消初始化，使用临时配置', 'warning');
+						showToast('使用临时配置', 'warning');
+						addDebugLog('用户取消初始化，使用临时配置', 'warning');
 					}
 				}
 
@@ -795,21 +863,24 @@
 
 				initSelect();
 				applySettings();
-				updateShortcutButtonHint();  // 更新快捷键按钮显示（未激活状态）
-				updateRefreshShortcutHint();  // 更新刷新按钮快捷键提示
+				updateShortcutButtonHint(); // 更新快捷键按钮显示（未激活状态）
+				updateRefreshShortcutHint(); // 更新刷新按钮快捷键提示
 				// 快捷键需要用户手动点击按钮激活
-				await load('初始化加载');
-				toast('总线助手已启用', 'success');
+				await loadAllSchematicPages('初始化加载');
+				showToast('总线助手已启用', 'success');
 			}
 
 			function initSelect() {
 				busTypeSelect.innerHTML = '<option value="">选择类型...</option>';
-				BUS_CONFIGS.forEach(c => busTypeSelect.add(new Option(c.presetName, c.presetName)));
+				BUS_CONFIGS.forEach((c) => busTypeSelect.add(new Option(c.presetName, c.presetName)));
 			}
 
 			// 应用配置到界面
 			function applySettings() {
 				const settings = loadSettings();
+
+				// 加载自定义电源轨道
+				customPowerNets = settings.customPowerNets || [];
 				// 设置默认值
 				busIndexInput.value = settings.defaultBusIndex;
 				spacingInput.value = settings.wireSpacing;
@@ -843,7 +914,7 @@
 								if (Array.isArray(line)) {
 									if (typeof line[0] === 'number') {
 										for (let i = 0; i < line.length; i += 2) {
-											const key = `${line[i]},${line[i+1]}`;
+											const key = `${line[i]},${line[i + 1]}`;
 											wireCoordMap.set(key, { wire, primitiveId, net, line });
 										}
 									} else {
@@ -884,7 +955,7 @@
 								name: compName,
 								primitiveId: comp.primitiveId,
 								schematicPageUuid: pageUuid || comp.schematicPageUuid, // 优先使用传入的图页UUID
-								pins: []
+								pins: [],
 							};
 
 							for (const pin of pins) {
@@ -907,7 +978,7 @@
 									rotation: pinRotation,
 									net: wireInfo?.net || null,
 									wirePrimitiveId: wireInfo?.primitiveId,
-									wireLine: wireInfo?.line
+									wireLine: wireInfo?.line,
 								};
 
 								compInfo.pins.push(pinData);
@@ -923,12 +994,12 @@
 											busComponents[busKey][designator] = {
 												name: compName,
 												schematicPageUuid: pageUuid || comp.schematicPageUuid, // 使用传入的图页UUID
-												pins: []
+												pins: [],
 											};
 										}
 										busComponents[busKey][designator].pins.push({
 											...pinData,
-											wireLine: wireInfo.line
+											wireLine: wireInfo.line,
 										});
 									}
 								}
@@ -949,13 +1020,13 @@
 			 * 加载当前图页数据（用于固定位置/延时放置后的快速刷新）
 			 * @param {string} reason - 刷新原因，用于日志记录
 			 */
-			async function loadCurrentPageOnly(reason = '快速刷新') {
-				log(`刷新当前图页 [原因: ${reason}]`, 'info');
+			async function loadCurrentSchematicPage(reason = '快速刷新') {
+				addDebugLog(`刷新当前图页 [原因: ${reason}]`, 'info');
 
 				try {
 					const currentDoc = await edaApi.dmt_SelectControl.getCurrentDocumentInfo();
 					if (!currentDoc || currentDoc.documentType !== 1) {
-						log('当前文档不是原理图图页', 'warning');
+						addDebugLog('当前文档不是原理图图页', 'warning');
 						return;
 					}
 
@@ -970,7 +1041,7 @@
 					}
 
 					// 只获取当前图页的数据
-					const wires = await edaApi.sch_PrimitiveWire.getAll() || [];
+					const wires = (await edaApi.sch_PrimitiveWire.getAll()) || [];
 
 					// 解析当前图页的总线实例和供电网络
 					const pageBusMap = new Map();
@@ -978,7 +1049,7 @@
 					powerNets = [];
 					const powerSeen = new Set();
 
-					wires.forEach(w => {
+					wires.forEach((w) => {
 						try {
 							const net = w.net || '';
 							if (!net || pageSeen.has(net)) return;
@@ -1009,17 +1080,17 @@
 					// 生成总线实例日志
 					if (pageBusMap.size > 0) {
 						const busList = Array.from(pageBusMap.values())
-							.map(b => `${b.type}${b.idx}`)
+							.map((b) => `${b.type}${b.idx}`)
 							.join('、');
-						log(`当前图页: ${busList}`, 'success');
+						addDebugLog(`当前图页: ${busList}`, 'success');
 					} else {
-						log('当前图页: 无总线', 'info');
+						addDebugLog('当前图页: 无总线', 'info');
 					}
 
 					// 生成供电网络日志
 					if (powerNets.length > 0) {
-						const powerList = powerNets.map(p => p.voltage).join('、');
-						log(`供电网络: ${powerList}`, 'success');
+						const powerList = powerNets.map((p) => p.voltage).join('、');
+						addDebugLog(`供电网络: ${powerList}`, 'success');
 					}
 
 					// 重置并获取当前图页的元件映射
@@ -1033,7 +1104,7 @@
 					const map = new Map();
 					const seen = new Set();
 
-					wires.forEach(w => {
+					wires.forEach((w) => {
 						try {
 							const net = w.net || '';
 							if (!net || seen.has(net)) return;
@@ -1053,14 +1124,14 @@
 					});
 
 					sortBuses();
-					renderStats();
+					renderBusStatistics();
 					renderBuses();
 					renderPowerNets();
 					renderComponents();
 
-					log('刷新完成', 'success');
+					addDebugLog('刷新完成', 'success');
 				} catch (e) {
-					log(`刷新失败: ${e.message || e}`, 'error');
+					addDebugLog(`刷新失败: ${e.message || e}`, 'error');
 					console.error('刷新当前图页失败:', e);
 				}
 			}
@@ -1069,15 +1140,15 @@
 			 * 加载所有图页数据（用于手动刷新或首次加载）
 			 * @param {string} reason - 刷新原因，用于日志记录
 			 */
-			async function load(reason = '手动刷新') {
+			async function loadAllSchematicPages(reason = '手动刷新') {
 				// 清空之前的日志
 				clearDebugLogs();
-				log(`开始刷新 [原因: ${reason}]`, 'info');
+				addDebugLog(`开始刷新 [原因: ${reason}]`, 'info');
 
 				try {
 					// 检查当前文档是否为原理图图页
 					const currentDoc = await edaApi.dmt_SelectControl.getCurrentDocumentInfo();
-					log(`当前文档类型: ${currentDoc?.documentType}`, 'info');
+					addDebugLog(`当前文档类型: ${currentDoc?.documentType}`, 'info');
 
 					let wires = [];
 
@@ -1087,10 +1158,10 @@
 						// 获取当前原理图的所有图页信息
 						let allPages = [];
 						try {
-							allPages = await edaApi.dmt_Schematic.getCurrentSchematicAllSchematicPagesInfo() || [];
-							log(`发现 ${allPages.length} 个图页`, 'success');
+							allPages = (await edaApi.dmt_Schematic.getCurrentSchematicAllSchematicPagesInfo()) || [];
+							addDebugLog(`发现 ${allPages.length} 个图页`, 'success');
 						} catch (e) {
-							log(`获取图页信息失败: ${e.message}`, 'error');
+							addDebugLog(`获取图页信息失败: ${e.message}`, 'error');
 							console.warn('获取所有图页信息失败:', e);
 							allPages = [];
 						}
@@ -1098,7 +1169,7 @@
 						// 保存当前图页的 UUID
 						const currentPage = await edaApi.dmt_Schematic.getCurrentSchematicPageInfo();
 						const currentPageUuid = currentPage?.uuid;
-						log(`当前图页: ${currentPage?.name || '未知'} (${currentPageUuid})`, 'info');
+						addDebugLog(`当前图页: ${currentPage?.name || '未知'} (${currentPageUuid})`, 'info');
 
 						// 初始化元件数据
 						busComponents = {};
@@ -1111,7 +1182,7 @@
 						// 遍历所有图页获取导线和元件
 						for (const page of allPages) {
 							try {
-								log(`正在处理图页: ${page.name}...`, 'info');
+								addDebugLog(`正在处理图页: ${page.name}...`, 'info');
 
 								// 保存图页名称映射
 								pageNameMap[page.uuid] = page.name;
@@ -1120,14 +1191,14 @@
 								// 即使是当前图页也需要激活，因为切换图页后 API 状态可能不同步
 								await edaApi.dmt_EditorControl.openDocument(page.uuid);
 								// 等待图页切换完成
-								await new Promise(r => setTimeout(r, 100));
+								await new Promise((r) => setTimeout(r, 100));
 								// 获取该图页的导线
-								const pageWires = await edaApi.sch_PrimitiveWire.getAll() || [];
+								const pageWires = (await edaApi.sch_PrimitiveWire.getAll()) || [];
 
 								// 解析该图页的总线实例和供电网络
 								const pageBusMap = new Map();
 								const pageSeen = new Set();
-								pageWires.forEach(w => {
+								pageWires.forEach((w) => {
 									try {
 										const net = w.net || '';
 										if (!net || pageSeen.has(net)) return;
@@ -1158,11 +1229,11 @@
 								// 生成总线实例日志
 								if (pageBusMap.size > 0) {
 									const busList = Array.from(pageBusMap.values())
-										.map(b => `${b.type}${b.idx}`)
+										.map((b) => `${b.type}${b.idx}`)
 										.join('、');
-									log(`图页 ${page.name}: ${busList}`, 'success');
+									addDebugLog(`图页 ${page.name}: ${busList}`, 'success');
 								} else {
-									log(`图页 ${page.name}: 无总线`, 'info');
+									addDebugLog(`图页 ${page.name}: 无总线`, 'info');
 								}
 
 								wires.push(...pageWires);
@@ -1173,7 +1244,7 @@
 								const newCompCount = allComponents.length - prevCompCount;
 								totalComponents += newCompCount;
 							} catch (e) {
-								log(`图页 ${page.name} 失败: ${e.message}`, 'error');
+								addDebugLog(`图页 ${page.name} 失败: ${e.message}`, 'error');
 								console.warn(`获取图页 ${page.name} 的数据失败:`, e);
 							}
 						}
@@ -1182,16 +1253,16 @@
 						if (currentPageUuid) {
 							try {
 								await edaApi.dmt_EditorControl.openDocument(currentPageUuid);
-								log('已恢复原图页', 'success');
+								addDebugLog('已恢复原图页', 'success');
 							} catch (e) {
-								log(`恢复原图页失败: ${e.message}`, 'error');
+								addDebugLog(`恢复原图页失败: ${e.message}`, 'error');
 								console.warn('恢复原图页失败:', e);
 							}
 						}
 
-						log(`总计: ${wires.length} 条导线, ${totalComponents} 个元件`, 'success');
+						addDebugLog(`总计: ${wires.length} 条导线, ${totalComponents} 个元件`, 'success');
 					} else {
-						log('当前文档不是原理图图页', 'warning');
+						addDebugLog('当前文档不是原理图图页', 'warning');
 					}
 
 					stats = {};
@@ -1199,7 +1270,7 @@
 					const map = new Map();
 					const seen = new Set();
 
-					(wires || []).forEach(w => {
+					(wires || []).forEach((w) => {
 						try {
 							const net = w.net || '';
 							if (!net || seen.has(net)) return;
@@ -1220,29 +1291,31 @@
 						stats[b.type] = (stats[b.type] || 0) + 1;
 					});
 
-					log(`解析完成: ${buses.length} 个总线实例`, 'success');
+					addDebugLog(`解析完成: ${buses.length} 个总线实例`, 'success');
 
 					// 输出总线统计
-					const statsText = Object.entries(stats).map(([type, count]) => `${type}: ${count}`).join(', ');
+					const statsText = Object.entries(stats)
+						.map(([type, count]) => `${type}: ${count}`)
+						.join(', ');
 					if (statsText) {
-						log(`总线统计: ${statsText}`, 'info');
+						addDebugLog(`总线统计: ${statsText}`, 'info');
 					}
 
 					// 输出供电网络统计
 					if (powerNets.length > 0) {
-						const powerList = powerNets.map(p => p.voltage).join('、');
-						log(`供电网络: ${powerList}`, 'success');
+						const powerList = powerNets.map((p) => p.voltage).join('、');
+						addDebugLog(`供电网络: ${powerList}`, 'success');
 					}
 
 					sortBuses();
-					renderStats();
+					renderBusStatistics();
 					renderBuses();
 					renderPowerNets();
 					renderComponents();
 
-					log('刷新完成', 'success');
+					addDebugLog('刷新完成', 'success');
 				} catch (e) {
-					log(`加载失败: ${e.message || e}`, 'error');
+					addDebugLog(`加载失败: ${e.message || e}`, 'error');
 					console.error('加载失败:', e);
 				}
 			}
@@ -1258,15 +1331,17 @@
 				});
 			}
 
-			function renderStats() {
-				statGrid.innerHTML = BUS_CONFIGS.map(c => `
+			function renderBusStatistics() {
+				statGrid.innerHTML = BUS_CONFIGS.map(
+					(c) => `
 					<div class="col-4"><div class="stat-card" data-type="${c.presetName}" style="border-left: 3px solid ${c.color}">
 							<div class="fw-bold" style="color:${c.color}">${stats[c.presetName] || 0}</div>
 							<small class="text-muted">${c.presetName}</small>
 						</div>
 					</div>
-				`).join('');
-				statGrid.querySelectorAll('.stat-card').forEach(card => {
+				`,
+				).join('');
+				statGrid.querySelectorAll('.stat-card').forEach((card) => {
 					card.onclick = () => {
 						busTypeSelect.value = card.dataset.type;
 						busTypeSelect.dispatchEvent(new Event('change'));
@@ -1278,7 +1353,7 @@
 				$('busCountBadge').textContent = `${totalBuses} 总线`;
 
 				// 计算图页数量和元件数量
-				const pageUuids = new Set(allComponents.map(c => c.schematicPageUuid).filter(Boolean));
+				const pageUuids = new Set(allComponents.map((c) => c.schematicPageUuid).filter(Boolean));
 				const totalComponents = allComponents.length;
 				$('compCountBadge').textContent = `${pageUuids.size} 图页 · ${totalComponents} 元件`;
 
@@ -1289,52 +1364,79 @@
 			function renderPowerNets() {
 				const container = $('powerListContainer');
 
-				if (!powerNets || powerNets.length === 0) {
-					container.innerHTML = '<div class="text-center text-muted py-2"><small>暂无电源网络</small></div>';
+				// 合并扫描到的电源和用户自定义的电源
+				const allPowerNets = [...powerNets];
+
+				// 添加用户自定义的电源（如果不在扫描结果中）
+				customPowerNets.forEach((cp) => {
+					if (!allPowerNets.find((p) => p.name === cp.name)) {
+						allPowerNets.push(cp);
+					}
+				});
+
+				// 搜索过滤
+				let filteredPowerNets = allPowerNets;
+				if (powerSearchText) {
+					const searchLower = powerSearchText.toLowerCase();
+					filteredPowerNets = allPowerNets.filter(
+						(p) =>
+							p.name.toLowerCase().includes(searchLower) ||
+							p.voltage.toLowerCase().includes(searchLower) ||
+							(p.powerName || '').toLowerCase().includes(searchLower),
+					);
+				}
+
+				if (!filteredPowerNets || filteredPowerNets.length === 0) {
+					container.innerHTML =
+						'<div class="text-center text-muted py-2"><small>' +
+						(powerSearchText ? '无匹配结果' : '暂无电源网络，点击 + 新建') +
+						'</small></div>';
 					return;
 				}
 
-				// 按电压排序
-				const sortedPowerNets = [...powerNets].sort((a, b) => {
-					const vA = parseFloat(a.voltage) || 0;
-					const vB = parseFloat(b.voltage) || 0;
-					return vB - vA; // 降序，高电压在前
+				// 按名称排序
+				const sortedPowerNets = [...filteredPowerNets].sort((a, b) => {
+					const nameA = (a.powerName || a.name).toUpperCase();
+					const nameB = (b.powerName || b.name).toUpperCase();
+					return powerSortAscending ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
 				});
 
-				container.innerHTML = sortedPowerNets.map(p => {
-					// 查找使用该电源的元件
-					const poweredComps = allComponents.filter(comp =>
-						comp.pins.some(pin => pin.net === p.name)
-					);
-					const compCount = poweredComps.length;
+				container.innerHTML = sortedPowerNets
+					.map((p) => {
+						// 查找使用该电源的元件
+						const poweredComps = allComponents.filter((comp) => comp.pins.some((pin) => pin.net === p.name));
+						const compCount = poweredComps.length;
+						const isCustom = customPowerNets.find((cp) => cp.name === p.name);
 
-					return `
+						return `
 						<div class="power-item card mb-1" data-power-name="${p.name}" style="cursor:pointer;">
 							<div class="card-body py-1 px-2">
 								<div class="d-flex justify-content-between align-items-center">
-									<span class="fw-bold text-danger">${p.voltage}</span>
-									<span class="badge bg-secondary">${compCount} 元件</span>
+									<span class="fw-bold text-danger">${p.powerName || p.name} @ ${p.voltage}</span>
+									<div>
+										${isCustom ? '<span class="badge bg-info me-1">自定义</span>' : ''}
+										<span class="badge bg-secondary">${compCount} 元件</span>
+									</div>
 								</div>
 								<small class="text-muted">${p.name}</small>
 							</div>
 						</div>
 					`;
-				}).join('');
+					})
+					.join('');
 
 				// 点击电源项显示详情
-				container.querySelectorAll('.power-item').forEach(item => {
+				container.querySelectorAll('.power-item').forEach((item) => {
 					item.onclick = () => showPowerDetail(item.dataset.powerName);
 				});
 			}
 
 			function showPowerDetail(powerName) {
-				const power = powerNets.find(p => p.name === powerName);
+				const power = powerNets.find((p) => p.name === powerName);
 				if (!power) return;
 
 				// 查找使用该电源的元件
-				const poweredComps = allComponents.filter(comp =>
-					comp.pins.some(pin => pin.net === powerName)
-				);
+				const poweredComps = allComponents.filter((comp) => comp.pins.some((pin) => pin.net === powerName));
 
 				let bodyHtml = `
 					<div class="mb-3">
@@ -1352,11 +1454,11 @@
 				if (poweredComps.length === 0) {
 					bodyHtml += '<div class="list-group-item small text-muted">无元件使用此电源</div>';
 				} else {
-					poweredComps.forEach(comp => {
-						const pageName = comp.schematicPageUuid ? (pageNameMap[comp.schematicPageUuid] || '未知图页') : '';
+					poweredComps.forEach((comp) => {
+						const pageName = comp.schematicPageUuid ? pageNameMap[comp.schematicPageUuid] || '未知图页' : '';
 						// 找出连接此电源的引脚
-						const powerPins = comp.pins.filter(pin => pin.net === powerName);
-						const pinNames = powerPins.map(p => p.name || p.number).join(', ');
+						const powerPins = comp.pins.filter((pin) => pin.net === powerName);
+						const pinNames = powerPins.map((p) => p.name || p.number).join(', ');
 
 						bodyHtml += `
 							<div class="list-group-item small">
@@ -1382,8 +1484,8 @@
 				let filteredBuses = buses;
 				if (busSearchText) {
 					const searchLower = busSearchText.toLowerCase();
-					filteredBuses = buses.filter(b => {
-						const cfg = BUS_CONFIGS.find(c => c.presetName === b.type);
+					filteredBuses = buses.filter((b) => {
+						const cfg = BUS_CONFIGS.find((c) => c.presetName === b.type);
 						const busName = `${cfg?.presetName || b.type}#${b.idx}`.toLowerCase();
 						const nets = b.nets.join(' ').toLowerCase();
 						const comps = (b.components || []).join(' ').toLowerCase();
@@ -1392,39 +1494,42 @@
 				}
 
 				if (!filteredBuses.length) {
-					busListContainer.innerHTML = '<div class="text-center text-muted py-2"><small>' + (busSearchText ? '无匹配结果' : '暂无总线') + '</small></div>';
+					busListContainer.innerHTML =
+						'<div class="text-center text-muted py-2"><small>' + (busSearchText ? '无匹配结果' : '暂无总线') + '</small></div>';
 					return;
 				}
-				busListContainer.innerHTML = filteredBuses.map(b => {
-					const cfg = BUS_CONFIGS.find(c => c.presetName === b.type);
-					const compCount = b.components?.length || 0;
-					// 完善 3：无元件连接红色警告，只有一个元件黄色警告
-					let borderStyle = '';
-					let warningIcon = '';
-					if (compCount === 0) {
-						borderStyle = 'border: 2px solid #dc3545;';
-						warningIcon = '⚠️ ';
-					} else if (compCount === 1) {
-						borderStyle = 'border: 2px solid #ffc107;';
-						warningIcon = '⚡ ';
-					}
-					return `
+				busListContainer.innerHTML = filteredBuses
+					.map((b) => {
+						const cfg = BUS_CONFIGS.find((c) => c.presetName === b.type);
+						const compCount = b.components?.length || 0;
+						// 完善 3：无元件连接红色警告，只有一个元件黄色警告
+						let borderStyle = '';
+						let warningText = '';
+						if (compCount === 0) {
+							borderStyle = 'border: 2px solid #dc3545;';
+							warningText = '<small class="text-danger mt-1 d-block">该总线无任何元件</small>';
+						} else if (compCount === 1) {
+							borderStyle = 'border: 2px solid #ffc107;';
+							warningText = '<small class="text-warning mt-1 d-block">该总线仅一个元件</small>';
+						}
+						return `
 						<div class="bus-item card mb-2" data-bus-key="${b.type}_${b.idx}" style="cursor:pointer;${borderStyle}">
 							<div class="card-body py-2 px-2">
 								<div class="d-flex justify-content-between align-items-center">
-									<span class="fw-bold" style="color:${cfg?.color}">${warningIcon}${cfg?.presetName || b.type}#${b.idx}</span>
+									<span class="fw-bold" style="color:${cfg?.color}">${cfg?.presetName || b.type}#${b.idx}</span>
 									<span class="badge bg-secondary">${b.nets.length} 网络${compCount ? ` · ${compCount} 元件` : ''}</span>
 								</div>
 								<div class="mt-1">
-									${b.nets.map(n => `<span class="badge bg-light text-dark border me-1 small">${n}</span>`).join('')}
+									${b.nets.map((n) => `<span class="badge bg-light text-dark border me-1 small">${n}</span>`).join('')}
 								</div>
-								${compCount ? `<small class="text-success mt-1 d-block">🔌 ${b.components.join(', ')}</small>` : ''}
+								${compCount > 1 ? `<small class="text-success mt-1 d-block">${b.components.join(', ')}</small>` : warningText}
 							</div>
 						</div>
 					`;
-				}).join('');
+					})
+					.join('');
 
-				busListContainer.querySelectorAll('.bus-item').forEach(item => {
+				busListContainer.querySelectorAll('.bus-item').forEach((item) => {
 					item.onclick = () => showBusDetail(item.dataset.busKey);
 				});
 			}
@@ -1434,19 +1539,25 @@
 				let filteredComps = allComponents;
 				if (compSearchText) {
 					const searchLower = compSearchText.toLowerCase();
-					filteredComps = allComponents.filter(comp => {
+					filteredComps = allComponents.filter((comp) => {
 						const designator = comp.designator.toLowerCase();
 						const name = (comp.name || '').toLowerCase();
-						const buses = (comp.connectedBuses || []).map(b => {
-							const cfg = BUS_CONFIGS.find(c => c.presetName === b.type);
-							return `${cfg?.presetName || b.type}#${b.idx}`;
-						}).join(' ').toLowerCase();
+						const buses = (comp.connectedBuses || [])
+							.map((b) => {
+								const cfg = BUS_CONFIGS.find((c) => c.presetName === b.type);
+								return `${cfg?.presetName || b.type}#${b.idx}`;
+							})
+							.join(' ')
+							.toLowerCase();
 						return designator.includes(searchLower) || name.includes(searchLower) || buses.includes(searchLower);
 					});
 				}
 
 				if (!filteredComps.length) {
-					compListContainer.innerHTML = '<div class="text-center text-muted py-2"><small>' + (compSearchText ? '无匹配结果' : '暂无元件（引脚数≥4）') + '</small></div>';
+					compListContainer.innerHTML =
+						'<div class="text-center text-muted py-2"><small>' +
+						(compSearchText ? '无匹配结果' : '暂无元件（引脚数≥4）') +
+						'</small></div>';
 					return;
 				}
 
@@ -1457,50 +1568,51 @@
 					return compSortDescending ? busCountB - busCountA : busCountA - busCountB;
 				});
 
-				compListContainer.innerHTML = filteredComps.map(comp => {
-					// 计算连接的总线
-					const connectedBuses = [];
-					const busMap = new Map();
-					const busSignalsMap = new Map(); // 记录每个总线使用的信号
+				compListContainer.innerHTML = filteredComps
+					.map((comp) => {
+						// 计算连接的总线
+						const connectedBuses = [];
+						const busMap = new Map();
+						const busSignalsMap = new Map(); // 记录每个总线使用的信号
 
-					comp.pins.forEach(pin => {
-						if (pin.net) {
-							const parsed = parseNetName(pin.net);
-							if (parsed) {
-								const key = `${parsed.type}_${parsed.idx}`;
-								if (!busMap.has(key)) {
-									busMap.set(key, { type: parsed.type, idx: parsed.idx });
-									busSignalsMap.set(key, new Set());
+						comp.pins.forEach((pin) => {
+							if (pin.net) {
+								const parsed = parseNetName(pin.net);
+								if (parsed) {
+									const key = `${parsed.type}_${parsed.idx}`;
+									if (!busMap.has(key)) {
+										busMap.set(key, { type: parsed.type, idx: parsed.idx });
+										busSignalsMap.set(key, new Set());
+									}
+									busSignalsMap.get(key).add(parsed.signal);
 								}
-								busSignalsMap.get(key).add(parsed.signal);
 							}
-						}
-					});
+						});
 
-					busMap.forEach(bus => {
-						bus.usedSignals = Array.from(busSignalsMap.get(`${bus.type}_${bus.idx}`) || []);
-						connectedBuses.push(bus);
-					});
-					comp.connectedBuses = connectedBuses;
+						busMap.forEach((bus) => {
+							bus.usedSignals = Array.from(busSignalsMap.get(`${bus.type}_${bus.idx}`) || []);
+							connectedBuses.push(bus);
+						});
+						comp.connectedBuses = connectedBuses;
 
-					// 计算连接的电源
-					const connectedPowers = [];
-					comp.pins.forEach(pin => {
-						if (pin.net) {
-							const powerParsed = parsePowerNetName(pin.net);
-							if (powerParsed && !connectedPowers.find(p => p.name === powerParsed.name)) {
-								connectedPowers.push({
-									...powerParsed,
-									pinName: pin.name || pin.number
-								});
+						// 计算连接的电源
+						const connectedPowers = [];
+						comp.pins.forEach((pin) => {
+							if (pin.net) {
+								const powerParsed = parsePowerNetName(pin.net);
+								if (powerParsed && !connectedPowers.find((p) => p.name === powerParsed.name)) {
+									connectedPowers.push({
+										...powerParsed,
+										pinName: pin.name || pin.number,
+									});
+								}
 							}
-						}
-					});
+						});
 
-					// 获取图页名称
-					const pageName = comp.schematicPageUuid ? (pageNameMap[comp.schematicPageUuid] || '未知图页') : '';
+						// 获取图页名称
+						const pageName = comp.schematicPageUuid ? pageNameMap[comp.schematicPageUuid] || '未知图页' : '';
 
-					return `
+						return `
 						<div class="comp-item card mb-2" data-designator="${comp.designator}" style="cursor:pointer;">
 							<div class="card-body py-2 px-2">
 								<div class="d-flex justify-content-between align-items-center">
@@ -1510,46 +1622,57 @@
 										${pageName ? `<small class="text-info ms-1">[${pageName}]</small>` : ''}
 									</div>
 									<div>
-										${connectedPowers.length > 0 ? `<span class="badge bg-danger me-1">${connectedPowers.map(p => p.voltage).join(' ')}</span>` : ''}
+										${connectedPowers.length > 0 ? `<span class="badge bg-danger me-1">${connectedPowers.length} 电源</span>` : ''}
 										<span class="badge bg-primary">${connectedBuses.length} 总线</span>
 									</div>
 								</div>
-								${connectedPowers.length > 0 ? `
+								${
+									connectedPowers.length > 0
+										? `
 									<div class="mt-1">
-										${connectedPowers.map(p => `<span class="badge bg-danger me-1" title="${p.name} (${p.pinName})">${p.voltage}</span>`).join('')}
+										${connectedPowers.map((p) => `<span class="badge bg-danger me-1" title="${p.name} (${p.pinName})">${p.voltage}</span>`).join('')}
 									</div>
-								` : ''}
-								${connectedBuses.length > 0 ? `
+								`
+										: `<small class="text-warning mt-1 d-block">该元件无供电</small>`
+								}
+								${
+									connectedBuses.length > 0
+										? `
 									<div class="mt-1">
-										${connectedBuses.map(bus => {
-											const cfg = BUS_CONFIGS.find(c => c.presetName === bus.type);
-											const allSignals = cfg?.signals || [];
-											const usedSignals = bus.usedSignals || [];
-											const missingSignals = allSignals.filter(s => !usedSignals.includes(s));
-											const busLabel = `${cfg?.name || bus.type}#${bus.idx}`;
+										${connectedBuses
+											.map((bus) => {
+												const cfg = BUS_CONFIGS.find((c) => c.presetName === bus.type);
+												const allSignals = cfg?.signals || [];
+												const usedSignals = bus.usedSignals || [];
+												const missingSignals = allSignals.filter((s) => !usedSignals.includes(s));
+												const busLabel = `${cfg?.name || bus.type}#${bus.idx}`;
 
-											// 如果有缺失信号，显示更明确的提示
-											if (missingSignals.length > 0) {
-												if (missingSignals.length > allSignals.length / 2) {
-													// 缺的多：显示"总线名仅XX"
-													return `<span class="badge bg-warning text-dark me-1" title="${busLabel} 缺失: ${missingSignals.join(', ')}">${busLabel}仅${usedSignals.join('+')}</span>`;
-												} else {
-													// 缺的少：显示"总线名无XXX"
-													return `<span class="badge bg-secondary me-1" title="${busLabel} 未连接">${busLabel}无${missingSignals.join('/')}</span>`;
+												// 如果有缺失信号，显示更明确的提示
+												if (missingSignals.length > 0) {
+													if (missingSignals.length > allSignals.length / 2) {
+														// 缺的多：显示"总线名仅XX"
+														return `<span class="badge bg-warning text-dark me-1" title="${busLabel} 缺失: ${missingSignals.join(', ')}">${busLabel}仅${usedSignals.join('+')}</span>`;
+													} else {
+														// 缺的少：显示"总线名无XXX"
+														return `<span class="badge bg-secondary me-1" title="${busLabel} 未连接">${busLabel}无${missingSignals.join('/')}</span>`;
+													}
 												}
-											}
 
-											// 完整连接，显示正常样式
-											return `<span class="badge me-1" style="background:${cfg?.color || '#6c757d'}">${busLabel}</span>`;
-										}).join('')}
+												// 完整连接，显示正常样式
+												return `<span class="badge me-1" style="background:${cfg?.color || '#6c757d'}">${busLabel}</span>`;
+											})
+											.join('')}
 									</div>
-								` : ''}
+								`
+										: ''
+								}
 							</div>
 						</div>
 					`;
-				}).join('');
+					})
+					.join('');
 
-				compListContainer.querySelectorAll('.comp-item').forEach(item => {
+				compListContainer.querySelectorAll('.comp-item').forEach((item) => {
 					item.onclick = () => showCompDetail(item.dataset.designator);
 				});
 			}
@@ -1557,19 +1680,19 @@
 			function showBusDetail(busKey) {
 				const [type, idx] = busKey.split('_');
 				const currentIdx = parseInt(idx);
-				const cfg = BUS_CONFIGS.find(c => c.presetName === type);
-				const bus = buses.find(b => b.type === type && b.idx === currentIdx);
+				const cfg = BUS_CONFIGS.find((c) => c.presetName === type);
+				const bus = buses.find((b) => b.type === type && b.idx === currentIdx);
 				const comps = busComponents[busKey] || {};
 
-				const sameTypeBuses = buses.filter(b => b.type === type && b.idx !== currentIdx);
-				const availableIndices = sameTypeBuses.map(b => b.idx);
+				const sameTypeBuses = buses.filter((b) => b.type === type && b.idx !== currentIdx);
+				const availableIndices = sameTypeBuses.map((b) => b.idx);
 
 				$('modalTitle').innerHTML = `<span style="color:${cfg?.color}">${cfg?.name}#${currentIdx}</span> 详情`;
 
 				let bodyHtml = `
 					<div class="mb-3">
 						<h6 class="text-muted small">网络标签</h6>
-						<div>${bus?.nets.map(n => `<span class="badge bg-primary me-1">${n}</span>`).join('') || '无'}</div>
+						<div>${bus?.nets.map((n) => `<span class="badge bg-primary me-1">${n}</span>`).join('') || '无'}</div>
 					</div>
 				`;
 
@@ -1582,9 +1705,12 @@
 
 						let channelBtnsHtml = '';
 						if (availableIndices.length) {
-							channelBtnsHtml = availableIndices.map(i =>
-								`<button type="button" class="btn btn-outline-secondary btn-sm channel-btn" data-comp-id="${compId}" data-target-idx="${i}">${cfg?.name}#${i}</button>`
-							).join('');
+							channelBtnsHtml = availableIndices
+								.map(
+									(i) =>
+										`<button type="button" class="btn btn-outline-secondary btn-sm channel-btn" data-comp-id="${compId}" data-target-idx="${i}">${cfg?.name}#${i}</button>`,
+								)
+								.join('');
 						} else {
 							channelBtnsHtml = '<span class="text-muted small">无其他可用通道</span>';
 						}
@@ -1601,11 +1727,15 @@
 									</button>
 								</div>
 								<div class="mt-1">
-									${info.pins.map(p => `
+									${info.pins
+										.map(
+											(p) => `
 										<span class="badge bg-light text-dark border me-1 mb-1 small">
 											${p.number ? `Pin${p.number}` : ''} ${p.name} → ${p.net}
 										</span>
-									`).join('')}
+									`,
+										)
+										.join('')}
 								</div>
 								<div class="channel-selector mt-2" id="${compId}_selector" style="display:none;">
 									<div class="alert alert-info py-1 px-2 small mb-1">
@@ -1639,8 +1769,8 @@
 			}
 
 			function bindModalEvents(busKey, busType, cfg) {
-				document.querySelectorAll('.toggle-btn').forEach(btn => {
-					btn.addEventListener('click', function() {
+				document.querySelectorAll('.toggle-btn').forEach((btn) => {
+					btn.addEventListener('click', function () {
 						const compId = this.dataset.compId;
 						const selector = document.getElementById(`${compId}_selector`);
 						if (selector) {
@@ -1649,8 +1779,8 @@
 					});
 				});
 
-				document.querySelectorAll('.channel-btn').forEach(btn => {
-					btn.addEventListener('click', function() {
+				document.querySelectorAll('.channel-btn').forEach((btn) => {
+					btn.addEventListener('click', function () {
 						const compId = this.dataset.compId;
 						const targetIdx = this.dataset.targetIdx;
 
@@ -1671,16 +1801,16 @@
 					});
 				});
 
-				document.querySelectorAll('.cancel-btn').forEach(btn => {
-					btn.addEventListener('click', function() {
+				document.querySelectorAll('.cancel-btn').forEach((btn) => {
+					btn.addEventListener('click', function () {
 						const compId = this.dataset.compId;
 						const selector = document.getElementById(`${compId}_selector`);
 						if (selector) selector.style.display = 'none';
 					});
 				});
 
-				document.querySelectorAll('.apply-btn').forEach(btn => {
-					btn.addEventListener('click', async function() {
+				document.querySelectorAll('.apply-btn').forEach((btn) => {
+					btn.addEventListener('click', async function () {
 						const busKey = this.dataset.busKey;
 						const designator = this.dataset.designator;
 						const compId = this.dataset.compId;
@@ -1690,46 +1820,46 @@
 						const newIdx = parseInt(newIdxInput.value);
 
 						if (!newIdx || newIdx < 1) {
-							toast('请输入有效的序号', 'error');
+							showToast('请输入有效的序号', 'error');
 							return;
 						}
 
-						const cfg = BUS_CONFIGS.find(c => c.presetName === busType);
+						const cfg = BUS_CONFIGS.find((c) => c.presetName === busType);
 						const compInfo = busComponents[busKey]?.[designator];
 
 						if (!compInfo) {
-							toast('找不到元件信息', 'error');
+							showToast('找不到元件信息', 'error');
 							return;
 						}
 
 						// 检测元件所在图页，必要时切换图页
 						const currentPage = await edaApi.dmt_Schematic.getCurrentSchematicPageInfo();
 						const compPageUuid = compInfo.schematicPageUuid;
-						const compPageName = compPageUuid ? (pageNameMap[compPageUuid] || '未知图页') : '未知图页';
+						const compPageName = compPageUuid ? pageNameMap[compPageUuid] || '未知图页' : '未知图页';
 						let needSwitchBack = false;
 
-						log(`元件 ${designator} 所在图页: ${compPageName} (${compPageUuid || '无UUID'})`, 'info');
-						log(`当前活动图页: ${currentPage?.name || '未知'} (${currentPage?.uuid || '无UUID'})`, 'info');
+						addDebugLog(`元件 ${designator} 所在图页: ${compPageName} (${compPageUuid || '无UUID'})`, 'info');
+						addDebugLog(`当前活动图页: ${currentPage?.name || '未知'} (${currentPage?.uuid || '无UUID'})`, 'info');
 
 						if (compPageUuid && compPageUuid !== currentPage?.uuid) {
 							// 元件在其他图页，需要先切换
-							log(`需要切换图页: ${currentPage?.name} → ${compPageName}`, 'warning');
-							toast(`正在切换到元件所在图页...`, 'info');
+							addDebugLog(`需要切换图页: ${currentPage?.name} → ${compPageName}`, 'warning');
+							showToast(`正在切换到元件所在图页...`, 'info');
 							try {
 								await edaApi.dmt_EditorControl.openDocument(compPageUuid);
-								await new Promise(r => setTimeout(r, 200)); // 等待图页切换完成
+								await new Promise((r) => setTimeout(r, 200)); // 等待图页切换完成
 								needSwitchBack = true;
-								log(`已切换到图页: ${compPageName}`, 'success');
+								addDebugLog(`已切换到图页: ${compPageName}`, 'success');
 							} catch (e) {
-								log(`切换图页失败: ${e.message || e}`, 'error');
-								toast(`切换图页失败: ${e.message || e}`, 'error');
+								addDebugLog(`切换图页失败: ${e.message || e}`, 'error');
+								showToast(`切换图页失败: ${e.message || e}`, 'error');
 								return;
 							}
 						} else {
-							log(`元件在当前图页，无需切换`, 'info');
+							addDebugLog(`元件在当前图页，无需切换`, 'info');
 						}
 
-						toast(`正在更改 ${designator} 到 ${cfg.name}#${newIdx}...`, 'info');
+						showToast(`正在更改 ${designator} 到 ${cfg.name}#${newIdx}...`, 'info');
 
 						let successCount = 0;
 
@@ -1737,7 +1867,7 @@
 							const parsed = parseNetName(pin.net);
 							if (!parsed) continue;
 
-							const newNetName = netName(busType, newIdx, parsed.signal);
+							const newNetName = generateBusNetName(busType, newIdx, parsed.signal);
 
 							try {
 								if (pin.wirePrimitiveId && pin.wireLine) {
@@ -1752,20 +1882,22 @@
 						}
 
 						if (successCount > 0) {
-							toast(`成功更改 ${successCount} 个网络标签`, 'success');
+							showToast(`成功更改 ${successCount} 个网络标签`, 'success');
 							setTimeout(async () => {
-								try { busDetailModal.hide(); } catch (e) {}
-								await new Promise(r => setTimeout(r, 100));
+								try {
+									busDetailModal.hide();
+								} catch (e) {}
+								await new Promise((r) => setTimeout(r, 100));
 
 								// 跨图页操作后需要完整刷新，保留所有图页数据
 								if (needSwitchBack) {
-									await load('调整通道（跨图页）');
+									await loadAllSchematicPages('调整通道（跨图页）');
 								} else {
-									await loadCurrentPageOnly('调整通道');
+									await loadCurrentSchematicPage('调整通道');
 								}
 							}, 200);
 						} else {
-							toast('更改失败', 'error');
+							showToast('更改失败', 'error');
 							// 切换回原图页
 							if (needSwitchBack && currentPage?.uuid) {
 								try {
@@ -1779,13 +1911,14 @@
 
 			// 元件详情模态框
 			function showCompDetail(designator) {
-				const comp = allComponents.find(c => c.designator === designator);
+				const comp = allComponents.find((c) => c.designator === designator);
 				if (!comp) return;
 
 				$('compModalTitle').innerHTML = `<span class="text-primary">${comp.name}</span> <small class="text-muted">${designator}</small>`;
 
 				// 按连接状态排序引脚：未连接的在前，已连接的在后
-				const sortedPins = comp.pins.map((p, i) => ({ ...p, originalIndex: i }))
+				const sortedPins = comp.pins
+					.map((p, i) => ({ ...p, originalIndex: i }))
 					.sort((a, b) => {
 						if (a.net && !b.net) return 1;
 						if (!a.net && b.net) return -1;
@@ -1799,7 +1932,9 @@
 							<button type="button" class="btn btn-outline-primary btn-sm" id="selectAllPinsBtn">全选</button>
 						</div>
 						<div class="pin-grid" id="pinGrid">
-							${sortedPins.map((p, i) => `
+							${sortedPins
+								.map(
+									(p, i) => `
 								<div class="pin-item ${p.net ? 'connected' : ''}" data-pin-index="${p.originalIndex}">
 									<div class="form-check">
 										<input class="form-check-input pin-checkbox" type="checkbox" id="pin_${p.originalIndex}" data-pin-index="${p.originalIndex}" ${p.net ? 'disabled' : ''}>
@@ -1810,7 +1945,9 @@
 										</label>
 									</div>
 								</div>
-							`).join('')}
+							`,
+								)
+								.join('')}
 						</div>
 						<small class="text-muted">已连接的引脚显示在下方且不可选择</small>
 					</div>
@@ -1822,6 +1959,7 @@
 
 					<div class="d-flex gap-2 mb-3" id="connectBusSection" style="display:none;">
 						<button type="button" class="btn btn-primary btn-sm" id="connectBusBtn">接入总线</button>
+						<button type="button" class="btn btn-danger btn-sm" id="connectPowerBtn">新增供电</button>
 					</div>
 
 					<div id="busSelectorSection" style="display:none;">
@@ -1848,6 +1986,25 @@
 							<button type="button" class="btn btn-secondary btn-sm" id="cancelConnectBtn">取消</button>
 						</div>
 					</div>
+
+					<div id="powerSelectorSection" style="display:none;">
+						<div class="mb-2">
+							<label class="form-label small mb-0">选择电源</label>
+							<select class="form-select form-select-sm" id="connectPowerSelect">
+								<option value="">选择电源...</option>
+							</select>
+						</div>
+						<div class="mb-2">
+							<label class="form-label small mb-0">选择引脚</label>
+							<select class="form-select form-select-sm" id="connectPowerPin">
+								<option value="">选择引脚...</option>
+							</select>
+						</div>
+						<div class="d-flex gap-2">
+							<button type="button" class="btn btn-success btn-sm" id="applyPowerConnectBtn">立即接入</button>
+							<button type="button" class="btn btn-secondary btn-sm" id="cancelPowerConnectBtn">取消</button>
+						</div>
+					</div>
 				`;
 
 				$('compModalBody').innerHTML = bodyHtml;
@@ -1863,7 +2020,7 @@
 				function updateBusTypeOptions() {
 					const count = selectedPins.size;
 					let optionsHtml = '<option value="">选择类型...</option>';
-					BUS_CONFIGS.forEach(c => {
+					BUS_CONFIGS.forEach((c) => {
 						const signalCount = c.signals.length;
 						const insufficient = count < signalCount;
 						const label = insufficient ? `${c.name} (需${signalCount}引脚，已选${count})` : c.name;
@@ -1873,8 +2030,8 @@
 				}
 
 				// 引脚选择
-				document.querySelectorAll('.pin-checkbox').forEach(cb => {
-					cb.addEventListener('change', function() {
+				document.querySelectorAll('.pin-checkbox').forEach((cb) => {
+					cb.addEventListener('change', function () {
 						const idx = parseInt(this.dataset.pinIndex);
 						if (this.checked) {
 							selectedPins.add(idx);
@@ -1887,9 +2044,9 @@
 				});
 
 				// 点击引脚条目即可选中（仅未连接的引脚）
-				document.querySelectorAll('.pin-item:not(.connected)').forEach(item => {
+				document.querySelectorAll('.pin-item:not(.connected)').forEach((item) => {
 					item.style.cursor = 'pointer';
-					item.addEventListener('click', function(e) {
+					item.addEventListener('click', function (e) {
 						// 如果点击的是复选框本身，不处理
 						if (e.target.type === 'checkbox') return;
 						const checkbox = this.querySelector('.pin-checkbox');
@@ -1901,10 +2058,10 @@
 				});
 
 				// 全选（只选择未禁用的引脚）
-				$('selectAllPinsBtn').addEventListener('click', function() {
+				$('selectAllPinsBtn').addEventListener('click', function () {
 					const enabledCheckboxes = document.querySelectorAll('.pin-checkbox:not(:disabled)');
-					const allChecked = enabledCheckboxes.length > 0 && Array.from(enabledCheckboxes).every(cb => cb.checked);
-					enabledCheckboxes.forEach(cb => {
+					const allChecked = enabledCheckboxes.length > 0 && Array.from(enabledCheckboxes).every((cb) => cb.checked);
+					enabledCheckboxes.forEach((cb) => {
 						cb.checked = !allChecked;
 						const idx = parseInt(cb.dataset.pinIndex);
 						if (!allChecked) {
@@ -1926,7 +2083,7 @@
 						$('selectedCount').textContent = count;
 						section.style.display = 'flex';
 						// 检查是否有总线类型需要更多引脚
-						const maxNeeded = Math.max(...BUS_CONFIGS.map(c => c.signals.length));
+						const maxNeeded = Math.max(...BUS_CONFIGS.map((c) => c.signals.length));
 						if (count < maxNeeded) {
 							warning.textContent = `(部分总线需要更多引脚)`;
 						} else {
@@ -1939,34 +2096,35 @@
 				}
 
 				// 接入总线按钮
-				$('connectBusBtn').addEventListener('click', function() {
+				$('connectBusBtn').addEventListener('click', function () {
 					$('busSelectorSection').style.display = 'block';
 					this.style.display = 'none';
 					updateBusTypeOptions();
 				});
 
 				// 取消按钮
-				$('cancelConnectBtn').addEventListener('click', function() {
+				$('cancelConnectBtn').addEventListener('click', function () {
 					$('busSelectorSection').style.display = 'none';
 					$('connectBusBtn').style.display = 'block';
 				});
 
 				// 总线类型选择
-				$('connectBusType').addEventListener('change', function() {
+				$('connectBusType').addEventListener('change', function () {
 					const type = this.value;
 					if (!type) return;
 
-					const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+					const cfg = BUS_CONFIGS.find((c) => c.presetName === type);
 					const selectedPinIndices = Array.from(selectedPins);
-					const selectedPinList = selectedPinIndices.map(i => comp.pins[i]);
+					const selectedPinList = selectedPinIndices.map((i) => comp.pins[i]);
 
 					// 按引脚名称排序，方便选择
 					const availablePins = selectedPinIndices.map((idx, i) => ({
 						index: idx,
-						pin: selectedPinList[i]
+						pin: selectedPinList[i],
 					}));
 
-					let mappingHtml = '<div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>信号</th><th>引脚</th><th></th></tr></thead><tbody>';
+					let mappingHtml =
+						'<div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>信号</th><th>引脚</th><th></th></tr></thead><tbody>';
 					cfg.signals.forEach((sig, i) => {
 						mappingHtml += `
 							<tr>
@@ -1974,7 +2132,7 @@
 								<td>
 									<select class="form-select form-select-sm signal-pin-select" data-signal="${sig}">
 										<option value="">选择引脚...</option>
-										${availablePins.map(p => `<option value="${p.index}" ${usedPins.has(p.index) ? 'disabled' : ''}>${p.pin.number || '?'} ${p.pin.name || '-'}${usedPins.has(p.index) ? ' (已用)' : ''}</option>`).join('')}
+										${availablePins.map((p) => `<option value="${p.index}" ${usedPins.has(p.index) ? 'disabled' : ''}>${p.pin.number || '?'} ${p.pin.name || '-'}${usedPins.has(p.index) ? ' (已用)' : ''}</option>`).join('')}
 									</select>
 								</td>
 								<td><button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 remove-signal-btn" data-signal="${sig}">✕</button></td>
@@ -1986,27 +2144,28 @@
 					$('signalMappingList').innerHTML = mappingHtml;
 
 					// 引脚选择变化时更新其他下拉框
-					document.querySelectorAll('.signal-pin-select').forEach(sel => {
-						sel.addEventListener('change', function() {
+					document.querySelectorAll('.signal-pin-select').forEach((sel) => {
+						sel.addEventListener('change', function () {
 							const currentSignal = this.dataset.signal;
 							const currentValue = this.value;
 
 							// 更新已使用引脚集合
 							usedPins.clear();
-							document.querySelectorAll('.signal-pin-select').forEach(s => {
+							document.querySelectorAll('.signal-pin-select').forEach((s) => {
 								if (s.value) {
 									usedPins.add(parseInt(s.value));
 								}
 							});
 
 							// 更新所有下拉框的禁用状态
-							document.querySelectorAll('.signal-pin-select').forEach(s => {
+							document.querySelectorAll('.signal-pin-select').forEach((s) => {
 								const signal = s.dataset.signal;
 								const savedValue = s.value;
-								Array.from(s.options).forEach(opt => {
+								Array.from(s.options).forEach((opt) => {
 									if (opt.value && opt.value !== savedValue) {
 										opt.disabled = usedPins.has(parseInt(opt.value));
-										opt.textContent = opt.textContent.replace(' (已用)', '') + (usedPins.has(parseInt(opt.value)) ? ' (已用)' : '');
+										opt.textContent =
+											opt.textContent.replace(' (已用)', '') + (usedPins.has(parseInt(opt.value)) ? ' (已用)' : '');
 									}
 								});
 							});
@@ -2014,68 +2173,68 @@
 					});
 
 					// 移除信号按钮
-					document.querySelectorAll('.remove-signal-btn').forEach(btn => {
-						btn.addEventListener('click', function() {
+					document.querySelectorAll('.remove-signal-btn').forEach((btn) => {
+						btn.addEventListener('click', function () {
 							this.closest('tr').remove();
 						});
 					});
 				});
 
 				// 立即接入
-				$('applyConnectBtn').addEventListener('click', async function() {
+				$('applyConnectBtn').addEventListener('click', async function () {
 					const type = $('connectBusType').value;
 					const idx = parseInt($('connectBusIdx').value);
 
 					if (!type || !idx) {
-						toast('请选择总线类型和序号', 'error');
+						showToast('请选择总线类型和序号', 'error');
 						return;
 					}
 
-					const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+					const cfg = BUS_CONFIGS.find((c) => c.presetName === type);
 					const mappings = [];
 
-					document.querySelectorAll('.signal-pin-select').forEach(sel => {
+					document.querySelectorAll('.signal-pin-select').forEach((sel) => {
 						if (sel.value) {
 							mappings.push({
 								signal: sel.dataset.signal,
-								pinIndex: parseInt(sel.value)
+								pinIndex: parseInt(sel.value),
 							});
 						}
 					});
 
 					if (mappings.length === 0) {
-						toast('请至少选择一个引脚映射', 'error');
+						showToast('请至少选择一个引脚映射', 'error');
 						return;
 					}
 
 					// 检测元件所在图页，必要时切换图页
 					const currentPage = await edaApi.dmt_Schematic.getCurrentSchematicPageInfo();
 					const compPageUuid = comp.schematicPageUuid;
-					const compPageName = compPageUuid ? (pageNameMap[compPageUuid] || '未知图页') : '未知图页';
+					const compPageName = compPageUuid ? pageNameMap[compPageUuid] || '未知图页' : '未知图页';
 					let needSwitchBack = false;
 
-					log(`元件 ${comp.designator} 所在图页: ${compPageName} (${compPageUuid || '无UUID'})`, 'info');
-					log(`当前活动图页: ${currentPage?.name || '未知'} (${currentPage?.uuid || '无UUID'})`, 'info');
+					addDebugLog(`元件 ${comp.designator} 所在图页: ${compPageName} (${compPageUuid || '无UUID'})`, 'info');
+					addDebugLog(`当前活动图页: ${currentPage?.name || '未知'} (${currentPage?.uuid || '无UUID'})`, 'info');
 
 					if (compPageUuid && compPageUuid !== currentPage?.uuid) {
 						// 元件在其他图页，需要先切换
-						log(`需要切换图页: ${currentPage?.name} → ${compPageName}`, 'warning');
-						toast(`正在切换到元件所在图页...`, 'info');
+						addDebugLog(`需要切换图页: ${currentPage?.name} → ${compPageName}`, 'warning');
+						showToast(`正在切换到元件所在图页...`, 'info');
 						try {
 							await edaApi.dmt_EditorControl.openDocument(compPageUuid);
-							await new Promise(r => setTimeout(r, 200)); // 等待图页切换完成
+							await new Promise((r) => setTimeout(r, 200)); // 等待图页切换完成
 							needSwitchBack = true;
-							log(`已切换到图页: ${compPageName}`, 'success');
+							addDebugLog(`已切换到图页: ${compPageName}`, 'success');
 						} catch (e) {
-							log(`切换图页失败: ${e.message || e}`, 'error');
-							toast(`切换图页失败: ${e.message || e}`, 'error');
+							addDebugLog(`切换图页失败: ${e.message || e}`, 'error');
+							showToast(`切换图页失败: ${e.message || e}`, 'error');
 							return;
 						}
 					} else {
-						log(`元件在当前图页，无需切换`, 'info');
+						addDebugLog(`元件在当前图页，无需切换`, 'info');
 					}
 
-					toast(`正在接入 ${cfg.name}#${idx}...`, 'info');
+					showToast(`正在接入 ${cfg.name}#${idx}...`, 'info');
 
 					let successCount = 0;
 
@@ -2083,7 +2242,7 @@
 						const pin = comp.pins[map.pinIndex];
 						if (!pin) continue;
 
-						const newNetName = netName(type, idx, map.signal);
+						const newNetName = generateBusNetName(type, idx, map.signal);
 
 						try {
 							// 如果已有连接，先删除
@@ -2124,21 +2283,148 @@
 					}
 
 					if (successCount > 0) {
-						toast(`成功接入 ${successCount} 个引脚`, 'success');
+						showToast(`成功接入 ${successCount} 个引脚`, 'success');
 						setTimeout(async () => {
-							try { compDetailModal.hide(); } catch (e) {}
-							await new Promise(r => setTimeout(r, 100));
+							try {
+								compDetailModal.hide();
+							} catch (e) {}
+							await new Promise((r) => setTimeout(r, 100));
 
 							// 跨图页操作后需要完整刷新，保留所有图页数据
 							if (needSwitchBack) {
-								await load('引脚接入总线（跨图页）');
+								await loadAllSchematicPages('引脚接入总线（跨图页）');
 							} else {
-								await loadCurrentPageOnly('引脚接入总线');
+								await loadCurrentSchematicPage('引脚接入总线');
 							}
 						}, 200);
 					} else {
-						toast('接入失败', 'error');
+						showToast('接入失败', 'error');
 						// 切换回原图页
+						if (needSwitchBack && currentPage?.uuid) {
+							try {
+								await edaApi.dmt_EditorControl.openDocument(currentPage.uuid);
+							} catch (e) {}
+						}
+					}
+				});
+
+				// 新增供电按钮
+				$('connectPowerBtn').addEventListener('click', function () {
+					$('busSelectorSection').style.display = 'none';
+					$('powerSelectorSection').style.display = 'block';
+
+					// 填充电源列表
+					const allPowerNets = [...powerNets];
+					customPowerNets.forEach((cp) => {
+						if (!allPowerNets.find((p) => p.name === cp.name)) {
+							allPowerNets.push(cp);
+						}
+					});
+
+					let powerOptions = '<option value="">选择电源...</option>';
+					allPowerNets.forEach((p) => {
+						powerOptions += `<option value="${p.name}">${p.powerName || p.name} (${p.voltage})</option>`;
+					});
+					$('connectPowerSelect').innerHTML = powerOptions;
+
+					// 填充引脚列表（未连接的引脚）
+					let pinOptions = '<option value="">选择引脚...</option>';
+					comp.pins.forEach((pin, idx) => {
+						if (!pin.net) {
+							pinOptions += `<option value="${idx}">${pin.number || '?'} ${pin.name || '-'}</option>`;
+						}
+					});
+					$('connectPowerPin').innerHTML = pinOptions;
+				});
+
+				// 取消电源接入
+				$('cancelPowerConnectBtn').addEventListener('click', function () {
+					$('powerSelectorSection').style.display = 'none';
+				});
+
+				// 立即接入电源
+				$('applyPowerConnectBtn').addEventListener('click', async function () {
+					const powerName = $('connectPowerSelect').value;
+					const pinIndex = $('connectPowerPin').value;
+
+					if (!powerName || pinIndex === '') {
+						showToast('请选择电源和引脚', 'error');
+						return;
+					}
+
+					const pin = comp.pins[parseInt(pinIndex)];
+					if (!pin) {
+						showToast('引脚不存在', 'error');
+						return;
+					}
+
+					// 检测元件所在图页，必要时切换图页
+					const currentPage = await edaApi.dmt_Schematic.getCurrentSchematicPageInfo();
+					const compPageUuid = comp.schematicPageUuid;
+					let needSwitchBack = false;
+
+					if (compPageUuid && compPageUuid !== currentPage?.uuid) {
+						showToast(`正在切换到元件所在图页...`, 'info');
+						try {
+							await edaApi.dmt_EditorControl.openDocument(compPageUuid);
+							await new Promise((r) => setTimeout(r, 200));
+							needSwitchBack = true;
+						} catch (e) {
+							showToast(`切换图页失败: ${e.message || e}`, 'error');
+							return;
+						}
+					}
+
+					showToast(`正在接入电源 ${powerName}...`, 'info');
+
+					try {
+						// 如果已有连接，先删除
+						if (pin.wirePrimitiveId) {
+							await edaApi.sch_PrimitiveWire.delete(pin.wirePrimitiveId);
+						}
+
+						// 根据引脚朝向确定导线方向
+						const rotation = pin.rotation || 0;
+						const settings = loadSettings();
+						const wireLength = settings.wireLength || 50;
+						let line;
+
+						if (rotation >= 315 || rotation < 45) {
+							line = [pin.x, pin.y, pin.x + wireLength, pin.y];
+						} else if (rotation >= 45 && rotation < 135) {
+							line = [pin.x, pin.y, pin.x, pin.y + wireLength];
+						} else if (rotation >= 135 && rotation < 225) {
+							line = [pin.x, pin.y, pin.x - wireLength, pin.y];
+						} else {
+							line = [pin.x, pin.y, pin.x, pin.y - wireLength];
+						}
+
+						const newWire = await edaApi.sch_PrimitiveWire.create(line, powerName);
+
+						if (newWire) {
+							showToast(`成功接入电源 ${powerName}`, 'success');
+							setTimeout(async () => {
+								try {
+									compDetailModal.hide();
+								} catch (e) {}
+								await new Promise((r) => setTimeout(r, 100));
+
+								if (needSwitchBack) {
+									await loadAllSchematicPages('电源接入（跨图页）');
+								} else {
+									await loadCurrentSchematicPage('电源接入');
+								}
+							}, 200);
+						} else {
+							showToast('接入失败', 'error');
+							if (needSwitchBack && currentPage?.uuid) {
+								try {
+									await edaApi.dmt_EditorControl.openDocument(currentPage.uuid);
+								} catch (e) {}
+							}
+						}
+					} catch (e) {
+						showToast(`接入失败: ${e.message || e}`, 'error');
 						if (needSwitchBack && currentPage?.uuid) {
 							try {
 								await edaApi.dmt_EditorControl.openDocument(currentPage.uuid);
@@ -2173,39 +2459,17 @@
 					console.error('保存配置失败:', e);
 				}
 
-				const cfg = BUS_CONFIGS.find(c => c.presetName === type);
-				signalList.innerHTML = cfg.signals.map(s => `
-					<div class="badge bg-light text-dark border d-block text-start mb-1">🏷 ${netName(type, idx, s)}</div>
-				`).join('');
+				const cfg = BUS_CONFIGS.find((c) => c.presetName === type);
+				signalList.innerHTML = cfg.signals
+					.map(
+						(s) => `
+					<div class="badge bg-light text-dark border d-block text-start mb-1">🏷 ${generateBusNetName(type, idx, s)}</div>
+				`,
+					)
+					.join('');
 				signalPreview.style.display = 'block';
 				createBtn.disabled = false;
 				createDelayBtn.disabled = false;
-			}
-
-			// 根据朝向计算导线坐标
-			function getWireCoords(x, y, index, spacing, length, direction) {
-				switch (direction) {
-					case 'left':
-						return [x, y + index * spacing, x - length, y + index * spacing];
-					case 'up':
-						return [x + index * spacing, y, x + index * spacing, y - length];
-					case 'down':
-						return [x + index * spacing, y, x + index * spacing, y + length];
-					case 'right':
-					default:
-						return [x, y + index * spacing, x + length, y + index * spacing];
-				}
-			}
-
-			// 根据导线方向计算网络标签旋转角度（标签朝向导线起点）
-			function getNetPortRotation(direction) {
-				switch (direction) {
-					case 'right': return 180; // 导线向右，标签朝左
-					case 'left': return 0;    // 导线向左，标签朝右
-					case 'down': return 270;  // 导线向下，标签朝上
-					case 'up': return 90;     // 导线向上，标签朝下
-					default: return 180;
-				}
 			}
 
 			// 核心创建函数
@@ -2214,7 +2478,7 @@
 				const idx = +busIndexInput.value;
 				if (!type) return { ok: 0, total: 0, ids: [] };
 
-				const cfg = BUS_CONFIGS.find(c => c.presetName === type);
+				const cfg = BUS_CONFIGS.find((c) => c.presetName === type);
 				const settings = loadSettings();
 				const spacing = +spacingInput.value || settings.wireSpacing || 10;
 				const length = settings.wireLength || 50;
@@ -2224,29 +2488,29 @@
 				let ok = 0;
 
 				for (let i = 0; i < cfg.signals.length; i++) {
-					const name = netName(type, idx, cfg.signals[i]);
+					const name = generateBusNetName(type, idx, cfg.signals[i]);
 					try {
 						const coords = getWireCoords(x, y, i, spacing, length, direction);
 
-					// 创建带网络标签的导线
-					const w = await edaApi.sch_PrimitiveWire.create(coords, name);
+						// 创建带网络标签的导线
+						const w = await edaApi.sch_PrimitiveWire.create(coords, name);
 
-					if (w) {
+						if (w) {
 							ok++;
-						const pid = w.primitiveId || w.getState_PrimitiveId?.();
+							const pid = w.primitiveId || w.getState_PrimitiveId?.();
 							if (pid) ids.push(pid);
 						}
 					} catch (e) {
-					console.error('创建导线失败:', e);
+						console.error('创建导线失败:', e);
 					}
-					await new Promise(r => setTimeout(r, 30));
+					await new Promise((r) => setTimeout(r, 30));
 				}
 
 				return { ok, total: cfg.signals.length, ids };
 			}
 
 			// 固定位置创建
-			async function create(e) {
+			async function createBusAtFixedPosition(e) {
 				e.preventDefault();
 				if (creating) return;
 
@@ -2271,15 +2535,18 @@
 				progressAlert.style.display = 'none';
 
 				const type = busTypeSelect.value;
-				const cfg = BUS_CONFIGS.find(c => c.presetName === type);
-				toast(`创建 ${cfg.name}#${busIndexInput.value}，成功 ${result.ok}/${result.total} 个`, result.ok === result.total ? 'success' : 'warning');
+				const cfg = BUS_CONFIGS.find((c) => c.presetName === type);
+				showToast(
+					`创建 ${cfg.name}#${busIndexInput.value}，成功 ${result.ok}/${result.total} 个`,
+					result.ok === result.total ? 'success' : 'warning',
+				);
 
 				// 固定位置只在当前图页创建，使用快速刷新
-				await loadCurrentPageOnly('固定位置创建');
+				await loadCurrentSchematicPage('固定位置创建');
 			}
 
 			// 延时放置
-			async function createWithDelay() {
+			async function createBusWithDelay() {
 				if (creating) return;
 
 				creating = true;
@@ -2300,7 +2567,7 @@
 				}, 1000);
 
 				// 延时
-				await new Promise(r => setTimeout(r, settings.delaySeconds * 1000));
+				await new Promise((r) => setTimeout(r, settings.delaySeconds * 1000));
 
 				try {
 					// 获取鼠标位置
@@ -2308,7 +2575,7 @@
 					console.log('鼠标位置:', pos);
 
 					if (!pos) {
-						toast('无法获取鼠标位置，请确保鼠标在画布上', 'error');
+						showToast('无法获取鼠标位置，请确保鼠标在画布上', 'error');
 						creating = false;
 						createDelayBtn.disabled = false;
 						delayInfo.style.display = 'none';
@@ -2328,14 +2595,14 @@
 					}
 
 					const type = busTypeSelect.value;
-					const cfg = BUS_CONFIGS.find(c => c.presetName === type);
-					toast(`在 (${pos.x}, ${pos.y}) 创建成功 ${result.ok}/${result.total} 个`, result.ok === result.total ? 'success' : 'warning');
+					const cfg = BUS_CONFIGS.find((c) => c.presetName === type);
+					showToast(`在 (${pos.x}, ${pos.y}) 创建成功 ${result.ok}/${result.total} 个`, result.ok === result.total ? 'success' : 'warning');
 
 					// 延时放置只在当前图页创建，使用快速刷新
-					await loadCurrentPageOnly('延时放置创建');
+					await loadCurrentSchematicPage('延时放置创建');
 				} catch (e) {
 					console.error('延时放置失败:', e);
-					toast(`放置失败: ${e.message || e}`, 'error');
+					showToast(`放置失败: ${e.message || e}`, 'error');
 				} finally {
 					creating = false;
 					createDelayBtn.disabled = false;
@@ -2353,8 +2620,8 @@
 							// 注销旧快捷键
 							if (registeredShortcutKey === data.oldKey) {
 								unregisterShortcutKey();
-								log(`快捷键 ${data.oldKey} 已注销，请重新激活 ${data.newKey}`, 'warning');
-								toast(`快捷键已更改，请重新激活`, 'warning');
+								addDebugLog(`快捷键 ${data.oldKey} 已注销，请重新激活 ${data.newKey}`, 'warning');
+								showToast(`快捷键已更改，请重新激活`, 'warning');
 							}
 							// 清除标志
 							localStorage.removeItem('mcu-bus-helper-shortcut-changed');
@@ -2372,8 +2639,8 @@
 
 			busTypeSelect.onchange = updatePreview;
 			busIndexInput.oninput = updatePreview;
-			$('createForm').onsubmit = create;
-			createDelayBtn.onclick = createWithDelay;
+			$('createForm').onsubmit = createBusAtFixedPosition;
+			createDelayBtn.onclick = createBusWithDelay;
 
 			// 完善 6：快捷键按钮显示当前快捷键和注册状态
 			function updateShortcutButtonHint() {
@@ -2403,47 +2670,148 @@
 				if (debugCollapse && !debugCollapse.classList.contains('show')) {
 					debugCollapse.classList.add('show');
 				}
-				await load('手动刷新');
+				await loadAllSchematicPages('手动刷新');
 				refreshBtn.disabled = false;
 			};
 			sortBtn.onclick = async () => {
 				sortDescending = !sortDescending;
 				sortBuses();
 				renderBuses();
-				toast(`已按元件数${sortDescending ? '降序' : '升序'}排列`, 'success');
+				showToast(`已按元件数${sortDescending ? '降序' : '升序'}排列`, 'success');
 			};
 
 			// 搜索框事件
-			$('busSearchInput').oninput = function() {
+			$('busSearchInput').oninput = function () {
 				busSearchText = this.value.trim();
 				renderBuses();
 			};
 
-			$('compSearchInput').oninput = function() {
+			$('compSearchInput').oninput = function () {
 				compSearchText = this.value.trim();
 				renderComponents();
 			};
 
 			// 元件排序按钮
-			$('compSortBtn').onclick = function() {
+			$('compSortBtn').onclick = function () {
 				compSortDescending = !compSortDescending;
 				renderComponents();
-				toast(`元件已按总线数${compSortDescending ? '降序' : '升序'}排列`, 'success');
+				showToast(`元件已按总线数${compSortDescending ? '降序' : '升序'}排列`, 'success');
+			};
+
+			// 电源搜索框
+			$('powerSearchInput').oninput = function () {
+				powerSearchText = this.value.trim();
+				renderPowerNets();
+			};
+
+			// 电源排序按钮
+			$('powerSortBtn').onclick = function () {
+				powerSortAscending = !powerSortAscending;
+				renderPowerNets();
+				showToast(`电源已按名称${powerSortAscending ? '升序' : '降序'}排列`, 'success');
+			};
+
+			// 新建电源轨道按钮
+			$('powerCreateBtn').onclick = function () {
+				$('powerNameInput').value = '';
+				$('powerVoltageInput').value = '';
+				$('powerPreview').innerHTML = '<code class="text-muted">PW_名称_电压</code>';
+				powerCreateModal.show();
+			};
+
+			// 电源名称输入实时预览
+			$('powerNameInput').oninput = updatePowerPreview;
+			$('powerVoltageInput').oninput = updatePowerPreview;
+
+			function updatePowerPreview() {
+				const name = $('powerNameInput')
+					.value.toUpperCase()
+					.replace(/[^A-Z0-9]/g, '');
+				const voltage = $('powerVoltageInput')
+					.value.toUpperCase()
+					.replace(/[^0-9V]/g, '');
+				if (name && voltage) {
+					$('powerPreview').innerHTML = `<code class="text-danger">PW_${name}_${voltage}</code>`;
+				} else {
+					$('powerPreview').innerHTML = '<code class="text-muted">PW_名称_电压</code>';
+				}
+			}
+
+			// 保存电源轨道
+			$('powerSaveBtn').onclick = function () {
+				const name = $('powerNameInput')
+					.value.toUpperCase()
+					.replace(/[^A-Z0-9]/g, '');
+				const voltage = $('powerVoltageInput')
+					.value.toUpperCase()
+					.replace(/[^0-9V]/g, '');
+
+				if (!name) {
+					showToast('请输入电源名称', 'warning');
+					return;
+				}
+				if (!voltage || !voltage.match(/^\d+V\d*$/)) {
+					showToast('请输入有效的电压值（如 3V3、5V）', 'warning');
+					return;
+				}
+
+				// 生成网络标签名称
+				const netName = `PW_${name}_${voltage}`;
+
+				// 检查是否已存在
+				if (customPowerNets.find((p) => p.name === netName)) {
+					showToast('该电源轨道已存在', 'warning');
+					return;
+				}
+
+				// 解析电压显示值
+				let voltageDisplay = voltage;
+				const voltageMatch = voltage.match(/^(\d+)V(\d*)$/);
+				if (voltageMatch && voltageMatch[2]) {
+					voltageDisplay = `${voltageMatch[1]}.${voltageMatch[2]}V`;
+				} else if (voltageMatch) {
+					voltageDisplay = `${voltageMatch[1]}V`;
+				}
+
+				// 添加到自定义电源列表
+				const newPowerNet = {
+					name: netName,
+					powerName: name,
+					voltage: voltageDisplay,
+					voltageStr: voltage,
+				};
+				customPowerNets.push(newPowerNet);
+
+				// 询问用户是否保存到配置文件
+				const saveToConfig = confirm(`电源轨道 ${netName} 已创建。\n\n是否保存到配置文件？\n\n保存后可在"助手设置"中管理。`);
+
+				if (saveToConfig) {
+					// 保存到配置
+					const settings = loadSettings();
+					settings.customPowerNets = customPowerNets;
+					saveSettings(settings);
+					showToast(`电源轨道 ${netName} 已保存到配置`, 'success');
+				} else {
+					showToast(`电源轨道 ${netName} 已创建（仅当前会话有效）`, 'info');
+				}
+
+				powerCreateModal.hide();
+				renderPowerNets();
 			};
 
 			// 折叠图标状态更新
-			document.querySelectorAll('.collapse').forEach(collapse => {
-				collapse.addEventListener('show.bs.collapse', function() {
+			document.querySelectorAll('.collapse').forEach((collapse) => {
+				collapse.addEventListener('show.bs.collapse', function () {
 					const icon = this.previousElementSibling?.querySelector('.collapse-icon');
 					if (icon) icon.style.transform = 'rotate(0deg)';
 				});
-				collapse.addEventListener('hide.bs.collapse', function() {
+				collapse.addEventListener('hide.bs.collapse', function () {
 					const icon = this.previousElementSibling?.querySelector('.collapse-icon');
 					if (icon) icon.style.transform = 'rotate(-90deg)';
 				});
 			});
 
-			init();
+			initMainPanel();
 		</script>
 	</body>
 </html>

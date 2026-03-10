@@ -207,6 +207,49 @@
 					</div>
 				</div>
 
+				<!-- 电源轨道管理 -->
+				<div class="card mb-2">
+					<div class="card-header py-1 px-2">
+						<small class="fw-bold">⚡ 电源轨道管理</small>
+					</div>
+					<div class="card-body py-2 px-2">
+						<small class="form-text text-muted d-block mb-2">管理自定义电源轨道，用于元件供电接入</small>
+						<div id="powerNetsList">
+							<small class="text-muted">暂无自定义电源轨道</small>
+						</div>
+						<!-- 添加新电源轨道 -->
+						<div class="mt-2 pt-2 border-top">
+							<div class="row g-2 mb-2">
+								<div class="col-5">
+									<input
+										type="text"
+										class="form-control form-control-sm"
+										id="newPowerName"
+										placeholder="电源名称"
+										style="text-transform: uppercase"
+									/>
+								</div>
+								<div class="col-4">
+									<input
+										type="text"
+										class="form-control form-control-sm"
+										id="newPowerVoltage"
+										placeholder="电压值"
+										style="text-transform: uppercase"
+									/>
+								</div>
+								<div class="col-3">
+									<button type="button" class="btn btn-outline-success btn-sm w-100" id="addPowerNetBtn">添加</button>
+								</div>
+							</div>
+							<div class="d-flex align-items-center gap-2">
+								<small class="text-muted">预览:</small>
+								<code id="newPowerPreview" class="text-muted">PW_名称_电压</code>
+							</div>
+						</div>
+					</div>
+				</div>
+
 				<div class="row g-2">
 					<!-- 左侧列 -->
 					<div class="col-md-6">
@@ -462,9 +505,16 @@
 				historyPrefixes: [],
 				enabledHistoryPrefixes: [],
 				busConfigs: DEFAULT_BUS_CONFIGS,
+				customPowerNets: [],
 				defaultBusType: 'I2C',
 				defaultBusIndex: 1,
 			};
+
+			// 当前配置状态
+			let currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
+			let currentHistoryPrefixes = [];
+			let currentEnabledHistoryPrefixes = [];
+			let currentCustomPowerNets = [];
 
 			/**
 			 * 检查是否存在已保存的配置
@@ -619,10 +669,6 @@
 			const historyPrefixList = $('historyPrefixList');
 			const addBusTypeBtn = $('addBusTypeBtn');
 
-			let currentBusConfigs = [];
-			let currentHistoryPrefixes = [];
-			let currentEnabledHistoryPrefixes = [];
-
 			function showToast(message, type = 'success') {
 				const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-warning';
 				const toast = document.createElement('div');
@@ -680,6 +726,109 @@
 			`,
 					)
 					.join('');
+			}
+
+			// 渲染电源轨道列表
+			function renderPowerNets() {
+				const container = $('powerNetsList');
+
+				if (!currentCustomPowerNets || currentCustomPowerNets.length === 0) {
+					container.innerHTML = '<small class="text-muted">暂无自定义电源轨道</small>';
+					return;
+				}
+
+				container.innerHTML = currentCustomPowerNets
+					.map(
+						(p, idx) => `
+					<div class="d-flex justify-content-between align-items-center p-1 mb-1 bg-light rounded">
+						<div>
+							<span class="fw-bold text-danger">${p.powerName} @ ${p.voltage}</span>
+							<small class="text-muted ms-2">${p.name}</small>
+						</div>
+						<button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 delete-power-btn" data-index="${idx}">✕</button>
+					</div>
+				`,
+					)
+					.join('');
+
+				// 绑定删除事件
+				container.querySelectorAll('.delete-power-btn').forEach((btn) => {
+					btn.onclick = () => {
+						const idx = parseInt(btn.dataset.index);
+						currentCustomPowerNets.splice(idx, 1);
+						renderPowerNets();
+						showToast('电源轨道已删除', 'info');
+					};
+				});
+			}
+
+			// 电源轨道预览更新
+			function updatePowerPreview() {
+				const name = $('newPowerName')
+					.value.toUpperCase()
+					.replace(/[^A-Z0-9]/g, '');
+				const voltage = $('newPowerVoltage')
+					.value.toUpperCase()
+					.replace(/[^0-9V]/g, '');
+
+				if (name && voltage) {
+					$('newPowerPreview').innerHTML = `<span class="text-danger">PW_${name}_${voltage}</span>`;
+				} else {
+					$('newPowerPreview').innerHTML = '<span class="text-muted">PW_名称_电压</span>';
+				}
+			}
+
+			// 添加电源轨道
+			function addPowerNet() {
+				const name = $('newPowerName')
+					.value.toUpperCase()
+					.replace(/[^A-Z0-9]/g, '');
+				const voltage = $('newPowerVoltage')
+					.value.toUpperCase()
+					.replace(/[^0-9V]/g, '');
+
+				if (!name) {
+					showToast('请输入电源名称', 'error');
+					return;
+				}
+				if (!voltage || !voltage.match(/^\d+V\d*$/)) {
+					showToast('请输入有效的电压值（如 3V3、5V）', 'error');
+					return;
+				}
+
+				// 生成网络标签名称
+				const netName = `PW_${name}_${voltage}`;
+
+				// 检查是否已存在
+				if (currentCustomPowerNets.find((p) => p.name === netName)) {
+					showToast('该电源轨道已存在', 'error');
+					return;
+				}
+
+				// 解析电压显示值
+				let voltageDisplay = voltage;
+				const voltageMatch = voltage.match(/^(\d+)V(\d*)$/);
+				if (voltageMatch && voltageMatch[2]) {
+					voltageDisplay = `${voltageMatch[1]}.${voltageMatch[2]}V`;
+				} else if (voltageMatch) {
+					voltageDisplay = `${voltageMatch[1]}V`;
+				}
+
+				// 添加到列表
+				currentCustomPowerNets.push({
+					name: netName,
+					powerName: name,
+					voltage: voltageDisplay,
+					voltageStr: voltage,
+				});
+
+				// 清空输入框
+				$('newPowerName').value = '';
+				$('newPowerVoltage').value = '';
+				updatePowerPreview();
+
+				renderPowerNets();
+				showToast(`电源轨道 ${netName} 已添加`, 'success');
 			}
 
 			// 渲染总线类型列表
@@ -931,15 +1080,21 @@
 						// 渲染历史前缀
 						renderHistoryPrefixes();
 
+						// 加载自定义电源轨道
+						currentCustomPowerNets = s.customPowerNets || [];
+						renderPowerNets();
+
 						log('已加载保存的配置', 'success');
 					} else {
 						setDirection(DEFAULT_SETTINGS.wireDirection);
 						currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
 						currentHistoryPrefixes = [];
 						currentEnabledHistoryPrefixes = [];
+						currentCustomPowerNets = [];
 						renderBusTypes();
 						updateDefaultBusTypeSelect();
 						renderHistoryPrefixes();
+						renderPowerNets();
 						log('未找到配置，使用默认值', 'warning');
 					}
 				} catch (e) {
@@ -975,6 +1130,7 @@
 					historyPrefixes: currentHistoryPrefixes,
 					enabledHistoryPrefixes: enabledHistoryPrefixes,
 					busConfigs: currentBusConfigs,
+					customPowerNets: currentCustomPowerNets,
 					defaultBusType: defaultBusTypeSelect.value || DEFAULT_SETTINGS.defaultBusType,
 					defaultBusIndex: parseInt(defaultBusIndexInput.value) || DEFAULT_SETTINGS.defaultBusIndex,
 				};
@@ -1021,6 +1177,7 @@
 					historyPrefixes: currentHistoryPrefixes,
 					enabledHistoryPrefixes: enabledHistoryPrefixes,
 					busConfigs: currentBusConfigs,
+					customPowerNets: currentCustomPowerNets,
 					defaultBusType: defaultBusTypeSelect.value || DEFAULT_SETTINGS.defaultBusType,
 					defaultBusIndex: parseInt(defaultBusIndexInput.value) || DEFAULT_SETTINGS.defaultBusIndex,
 				};
@@ -1092,9 +1249,11 @@
 				currentBusConfigs = [...DEFAULT_BUS_CONFIGS];
 				currentHistoryPrefixes = [];
 				currentEnabledHistoryPrefixes = [];
+				currentCustomPowerNets = [];
 				renderBusTypes();
 				updateDefaultBusTypeSelect();
 				renderHistoryPrefixes();
+				renderPowerNets();
 				showToast('已恢复默认配置', 'info');
 				log('已恢复默认配置', 'info');
 			}
@@ -1143,7 +1302,13 @@
 			// 导出配置
 			exportBtn.onclick = () => {
 				const settings = getSettings();
-				const jsonStr = JSON.stringify(settings, null, 2);
+				// 添加版本和时间戳
+				const exportData = {
+					version: '26.3.10',
+					exportTime: new Date().toISOString(),
+					...settings,
+				};
+				const jsonStr = JSON.stringify(exportData, null, 2);
 				const blob = new Blob([jsonStr], { type: 'application/json' });
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement('a');
@@ -1169,12 +1334,37 @@
 				const reader = new FileReader();
 				reader.onload = (e) => {
 					try {
-						const settings = JSON.parse(e.target.result);
-						// 验证配置格式
-						if (!settings.netPrefix || !settings.busConfigs) {
-							showToast('无效的配置文件', 'error');
-							return;
+						const imported = JSON.parse(e.target.result);
+
+						// 版本检查
+						const currentVersion = '26.3.10';
+						if (imported.version && imported.version !== currentVersion) {
+							if (!confirm(`配置文件版本 (${imported.version}) 与当前版本 (${currentVersion}) 不一致，是否继续导入？`)) {
+								return;
+							}
 						}
+
+						// 构建配置对象，使用默认值填充缺失字段
+						const settings = {
+							fixedX: typeof imported.fixedX === 'number' ? imported.fixedX : DEFAULT_SETTINGS.fixedX,
+							fixedY: typeof imported.fixedY === 'number' ? imported.fixedY : DEFAULT_SETTINGS.fixedY,
+							delaySeconds: typeof imported.delaySeconds === 'number' ? imported.delaySeconds : DEFAULT_SETTINGS.delaySeconds,
+							wireSpacing: typeof imported.wireSpacing === 'number' ? imported.wireSpacing : DEFAULT_SETTINGS.wireSpacing,
+							wireLength: typeof imported.wireLength === 'number' ? imported.wireLength : DEFAULT_SETTINGS.wireLength,
+							wireDirection: typeof imported.wireDirection === 'string' ? imported.wireDirection : DEFAULT_SETTINGS.wireDirection,
+							shortcutKey: typeof imported.shortcutKey === 'string' ? imported.shortcutKey : DEFAULT_SETTINGS.shortcutKey,
+							refreshShortcutKey:
+								typeof imported.refreshShortcutKey === 'string' ? imported.refreshShortcutKey : DEFAULT_SETTINGS.refreshShortcutKey,
+							netPrefix: typeof imported.netPrefix === 'string' ? imported.netPrefix : DEFAULT_SETTINGS.netPrefix,
+							historyPrefixes: Array.isArray(imported.historyPrefixes) ? imported.historyPrefixes : [],
+							enabledHistoryPrefixes: Array.isArray(imported.enabledHistoryPrefixes) ? imported.enabledHistoryPrefixes : [],
+							busConfigs: Array.isArray(imported.busConfigs) ? imported.busConfigs : [...DEFAULT_BUS_CONFIGS],
+							customPowerNets: Array.isArray(imported.customPowerNets) ? imported.customPowerNets : [],
+							defaultBusType: typeof imported.defaultBusType === 'string' ? imported.defaultBusType : DEFAULT_SETTINGS.defaultBusType,
+							defaultBusIndex:
+								typeof imported.defaultBusIndex === 'number' ? imported.defaultBusIndex : DEFAULT_SETTINGS.defaultBusIndex,
+						};
+
 						// 保存配置
 						localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 						showToast('配置已导入，请刷新页面', 'success');
@@ -1189,12 +1379,19 @@
 					}
 				};
 				reader.readAsText(file);
+				// 清空文件选择，允许重复选择同一文件
+				importFile.value = '';
 			};
 
 			// 初始化
 			function init() {
 				// 渲染已有的日志
 				renderDebugLogs();
+
+				// 绑定电源轨道相关事件
+				$('newPowerName').oninput = updatePowerPreview;
+				$('newPowerVoltage').oninput = updatePowerPreview;
+				$('addPowerNetBtn').onclick = addPowerNet;
 
 				// 检查是否存在配置，没有则询问用户是否初始化
 				if (!hasExistingConfig()) {

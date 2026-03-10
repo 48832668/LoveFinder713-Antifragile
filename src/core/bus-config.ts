@@ -4,7 +4,6 @@
  * 定义所有支持的总线类型及其信号配置
  * 每种总线都有严格的信号定义，确保创建的网络符合规范
  */
-
 import type { BusTypeConfig } from './types';
 import { PREFIX_BLACKLIST } from './types';
 
@@ -19,7 +18,7 @@ export { PREFIX_BLACKLIST };
  */
 export function isPrefixBlacklisted(prefix: string): boolean {
 	const normalized = prefix.toUpperCase().trim();
-	return PREFIX_BLACKLIST.includes(normalized as typeof PREFIX_BLACKLIST[number]);
+	return PREFIX_BLACKLIST.includes(normalized as (typeof PREFIX_BLACKLIST)[number]);
 }
 
 /**
@@ -33,7 +32,7 @@ export function getBlacklistMessage(): string {
  * 总线配置列表
  *
  * 添加新总线类型时，只需在此数组中添加配置即可
- * 
+ *
  * 字段说明：
  * - type: 内部类型标识
  * - displayName: UI 显示的名称
@@ -219,10 +218,10 @@ export function getBusMaxInstances(busType: string): number {
 
 /**
  * 生成网络名称
- * 格式：{全局前缀}_{标识名}{序号}_{信号名}
+ * 格式：\{全局前缀\}_\{标识名\}\{序号\}_\{信号名\}
  * 例如：SYS_IIC1_SDA, SYS_SPI2_MOSI
  */
-export function generateNetName(busType: string, index: number, signalName: string, globalPrefix: string = 'SYS'): string {
+export function generateNetName(busType: string, index: number, signalName: string, globalPrefix = 'SYS'): string {
 	const config = getBusConfig(busType);
 	const labelId = config ? config.labelId : busType;
 	return `${globalPrefix}_${labelId}${index}_${signalName}`;
@@ -231,7 +230,7 @@ export function generateNetName(busType: string, index: number, signalName: stri
 /**
  * 生成总线所有信号的网络名称
  */
-export function generateAllNetNames(busType: string, index: number, globalPrefix: string = 'SYS'): string[] {
+export function generateAllNetNames(busType: string, index: number, globalPrefix = 'SYS'): string[] {
 	const config = getBusConfig(busType);
 	if (!config) return [];
 
