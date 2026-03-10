@@ -10,7 +10,7 @@
 
 > [!NOTE]
 >
-> 本项目仓库：[[48832668/LoveFinder713-ElecAntifragile](https://github.com/4883二66八/LoveFinder713-ElecAntifragile)]
+> 本项目仓库：[[48832668/LoveFinder713-ElecAntifragile](https://github.com/48832668/LoveFinder713-ElecAntifragile)]
 
 ## 上手
 
