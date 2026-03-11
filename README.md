@@ -8,7 +8,7 @@
 
 > [!NOTE]
 >
-> 本项目仓库：[[48832668/LoveFinder713-ElecAntifragile](https://github.com/48832668/LoveFinder713-ElecAntifragile)]
+> 本项目仓库：[[LoveFinder713-Antifragile](https://github.com/48832668/LoveFinder713-Antifragile)]
 
 ## 上手
 
@@ -28,7 +28,7 @@
 
 ![LF713_wizard006](images/README/LF713_wizard006.png)
 
-3：延时放置，你可以练习预瞄，这样你可以随时退出LCEDA进行一场射击（线上或者线下）
+3：延时放置，你可以练下预瞄，这样你可以随时退出LCEDA进行一场射击（线上或者线下）
 
 ![LF713_wizard007](images/README/LF713_wizard007.png)
 
@@ -88,7 +88,7 @@
 
 我们来做一点高端cao作。
 
-现在的你应该理解了我对于总线框架的命名布局，其实这个插件是我个人开发习惯的一个凝练，我喜欢这样命名。
+现在的你应该理解了我对于总线框架的命名布局，其实这个插件是我个人开发思维的一个凝练，我喜欢这样命名。
 
 那么我现在来为你展示这样命名的一些优点
 
@@ -156,6 +156,12 @@
 给排针也连上
 
 ![LF713_wizard041](images/README/LF713_wizard041.png)![LF713_wizard042](images/README/LF713_wizard042.png)
+
+这些配置为了方便你维护和保存，插件还提供了配置文件导入导出，你可以快速的在任何地方，任何海拔，没有氧气密度的要求，也不需要你现在就购买一张1T硬盘，你可以备份你的配置文件，在浏览器中还是客户端，马上就用，马上就好。
+
+![LF713_wizard043](images/README/LF713_wizard043.png)
+
+![LF713_wizard044](images/README/LF713_wizard041.png)
 
 恭喜你已经看完！快去把配置中导线长度设置为100mil，不然标签太长了不好看，现在的网络标签的生成逻辑受到API限制，网络标签的端点目前只能在导线的中点。
 
