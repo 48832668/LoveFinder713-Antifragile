@@ -42,7 +42,7 @@
 
 ![LF713_wizard009](images/README/LF713_wizard009.png)
 
-修改类型后，前往”已有元件“卡片中找一个目标，我们以G8为例子：
+修改类型后，前往”已有元件“卡片中找一个目标，我们以STM32G031\*\*U6为例子：
 
 ![LF713_wizard010](images/README/LF713_wizard010.png)
 
@@ -94,7 +94,7 @@
 
 那么我现在来为你展示这样命名的一些优点
 
-我们现在来快速为G8来引入一个SWD调试。
+我们现在来快速为STM32G031G\*\*U6来引入一个SWD调试。
 
 我们现在前往设置：![LF713_wizard021](images/README/LF713_wizard021.png)
 
@@ -165,4 +165,4 @@
 
 <a href="https://choosealicense.com/licenses/apache-2.0/" style="vertical-align: inherit;" target="_blank"><img src="https://img.shields.io/github/license/easyeda/pro-api-sdk" alt="GitHub License" class="not-medium-zoom-image" style="display: inline; vertical-align: inherit;" /></a>
 
-本开发工具组使用 [Apache License 2.0](https://choosealicense.com/licenses/apache-2.0/) 开源许可协议，你仅可以将 **嘉立创EDA**、**EasyEDA** 商标信息用于依托于本工具组开发的扩展包的 **功能描述部分** 和 **开源发布的标题部分**。
+本开发工具组使用 [Apache License 2.0](https://choosealicense.com/licenses/apache-2.0/) 开源许可协议
