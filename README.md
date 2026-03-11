@@ -1,6 +1,6 @@
 [简体中文](#)
 
-# LoveFinderSeries*NO.713-Antifragile*"反|脆|弱"
+# LoveFinderSeries*NO.713-Antifragile*
 
 这是一个JLCEDA的原理图辅助工具，可以一站式管理你的任意信号总线和电源总线，可以快速为你的MCU等元件建立起外围信号网络，你可以一边随意地把一只手放在其他地方，一边尽情地用另外一只手来使用鼠标，只消片刻，IIC（I2C）、SPI、UART（USART）、SDIO等信号总线，FLASH_1V8、MCU_3V3等电源总线就快速的爬满你的原理图。你的鼠标、你的键盘、你的大脑将不再脆弱。
 
@@ -160,7 +160,5 @@
 恭喜你已经看完！快去把配置中导线长度设置为100mil，不然标签太长了不好看，现在的网络标签的生成逻辑受到API限制，网络标签的端点目前只能在导线的中点。
 
 ## 开源许可
-
-<a href="https://choosealicense.com/licenses/apache-2.0/" style="vertical-align: inherit;" target="_blank"><img src="https://img.shields.io/github/license/easyeda/pro-api-sdk" alt="GitHub License" class="not-medium-zoom-image" style="display: inline; vertical-align: inherit;" /></a>
 
 本开发工具组使用 [Apache License 2.0](https://choosealicense.com/licenses/apache-2.0/) 开源许可协议

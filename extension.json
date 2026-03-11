@@ -4,21 +4,21 @@
 	"displayName": "Antifragile-总线助手",
 	"description": "[LoveFinder713]承包你的各类信号总线和电源总线的网络标签辅助，快速创建和管理各类总线网络标签，预设多种总线，高度自定义，大幅提升原理图开发效率",
 	"version": "26.3.10",
-	"publisher": "",
+	"publisher": "LoveFinderSeries",
 	"engines": {
 		"eda": "^3.0.0"
 	},
 	"license": "Apache-2.0",
 	"repository": {
 		"type": "extension-store",
-		"url": ""
+		"url": "https://github.com/48832668/LoveFinder713-ElecAntifragile"
 	},
 	"categories": "PCB Design",
 	"keywords": ["总线", "Bus", "I2C", "SPI", "UART", "CAN", "网络标签", "原理图"],
 	"images": {
 		"logo": "./images/logo.png"
 	},
-	"homepage": "",
+	"homepage": "https://github.com/48832668",
 	"bugs": "",
 	"activationEvents": {},
 	"entry": "./dist/index",
