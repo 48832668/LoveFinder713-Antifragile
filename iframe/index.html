@@ -262,6 +262,23 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- 通用确认对话框 -->
+			<div class="modal fade" id="confirmModal" tabindex="-1">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header py-2">
+							<h6 class="modal-title" id="confirmModalTitle">确认</h6>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+						</div>
+						<div class="modal-body py-3" id="confirmModalBody">确认执行此操作？</div>
+						<div class="modal-footer py-2">
+							<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+							<button type="button" class="btn btn-primary btn-sm" id="confirmModalOk">确定</button>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 
 		<script src="/iframe/js/bootstrap.bundle.min.js"></script>
@@ -315,6 +332,7 @@
 				defaultBusType: 'I2C',
 				defaultBusIndex: 1,
 				customPowerNets: [], // 用户自定义的电源轨道
+				powerCheckRules: ['U'], // 默认检查以 U 开头的器件供电
 			};
 
 			/**
@@ -455,10 +473,47 @@
 			const compDetailModal = new bootstrap.Modal($('compDetailModal'));
 			const powerCreateModal = new bootstrap.Modal($('powerCreateModal'));
 
+			// ==================== Bootstrap Confirm 对话框 ====================
+			const confirmModal = new bootstrap.Modal($('confirmModal'));
+			let confirmResolve = null;
+
+			/**
+			 * 显示 Bootstrap 确认对话框
+			 * @param {string} message - 确认消息
+			 * @param {string} title - 对话框标题（可选）
+			 * @returns {Promise<boolean>} - 用户点击确定返回 true，取消返回 false
+			 */
+			function showConfirm(message, title = '确认') {
+				return new Promise((resolve) => {
+					confirmResolve = resolve;
+					$('confirmModalTitle').textContent = title;
+					$('confirmModalBody').innerHTML = message.replace(/\n/g, '<br>');
+					confirmModal.show();
+				});
+			}
+
+			// 绑定确认按钮事件
+			$('confirmModalOk').onclick = () => {
+				confirmModal.hide();
+				if (confirmResolve) {
+					confirmResolve(true);
+					confirmResolve = null;
+				}
+			};
+
+			// 绑定取消按钮事件（点击取消按钮或关闭模态框）
+			$('confirmModal').addEventListener('hidden.bs.modal', () => {
+				if (confirmResolve) {
+					confirmResolve(false);
+					confirmResolve = null;
+				}
+			});
+
 			// 修复模态框焦点警告
 			$('busDetailModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
 			$('compDetailModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
 			$('powerCreateModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
+			$('confirmModal').addEventListener('hide.bs.modal', () => document.activeElement.blur());
 
 			function showToast(msg, type = 'info') {
 				if (edaApi?.sys_Message) {
@@ -836,11 +891,12 @@
 
 				// 检查是否存在配置，没有则询问用户是否初始化
 				if (!hasExistingConfig()) {
-					const confirmed = confirm(
+					const confirmed = await showConfirm(
 						'欢迎使用总线助手！\n\n' +
 							'检测到这是首次使用，是否初始化默认配置？\n\n' +
 							'点击"确定"初始化配置\n' +
 							'点击"取消"将使用临时配置（不会保存）',
+						'欢迎使用',
 					);
 					if (confirmed) {
 						initializeConfig();
@@ -1610,6 +1666,11 @@
 						// 获取图页名称
 						const pageName = comp.schematicPageUuid ? pageNameMap[comp.schematicPageUuid] || '未知图页' : '';
 
+						// 检查是否需要检查供电（根据 powerCheckRules）
+						const settings = loadSettings();
+						const powerCheckRules = settings.powerCheckRules || DEFAULT_SETTINGS.powerCheckRules;
+						const shouldCheckPower = powerCheckRules.some((rule) => comp.designator.toUpperCase().startsWith(rule.toUpperCase()));
+
 						return `
 						<div class="comp-item card mb-2" data-designator="${comp.designator}" style="cursor:pointer;">
 							<div class="card-body py-2 px-2">
@@ -1631,7 +1692,9 @@
 										${connectedPowers.map((p) => `<span class="badge bg-danger me-1" title="${p.name} (${p.pinName})">${p.voltage}</span>`).join('')}
 									</div>
 								`
-										: `<small class="text-warning mt-1 d-block">该元件无供电</small>`
+										: shouldCheckPower
+											? `<small class="text-warning mt-1 d-block">该元件无供电</small>`
+											: ''
 								}
 								${
 									connectedBuses.length > 0
@@ -2736,7 +2799,7 @@
 			}
 
 			// 保存电源轨道
-			$('powerSaveBtn').onclick = function () {
+			$('powerSaveBtn').onclick = async function () {
 				const name = $('powerNameInput')
 					.value.toUpperCase()
 					.replace(/[^A-Z0-9]/g, '');
@@ -2781,7 +2844,10 @@
 				customPowerNets.push(newPowerNet);
 
 				// 询问用户是否保存到配置文件
-				const saveToConfig = confirm(`电源轨道 ${netName} 已创建。\n\n是否保存到配置文件？\n\n保存后可在"助手设置"中管理。`);
+				const saveToConfig = await showConfirm(
+					`电源轨道 ${netName} 已创建。\n\n是否保存到配置文件？\n\n保存后可在"助手设置"中管理。`,
+					'保存确认',
+				);
 
 				if (saveToConfig) {
 					// 保存到配置
