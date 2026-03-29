@@ -2388,13 +2388,35 @@
 					});
 					$('connectPowerSelect').innerHTML = powerOptions;
 
-					// 填充引脚列表（未连接的引脚）
+					// 填充引脚列表：优先显示已勾选的引脚
 					let pinOptions = '<option value="">选择引脚...</option>';
+
+					// 先添加已勾选且未连接的引脚（优先显示）
+					const selectedUnconnectedPins = [];
+					const otherUnconnectedPins = [];
+
 					comp.pins.forEach((pin, idx) => {
 						if (!pin.net) {
-							pinOptions += `<option value="${idx}">${pin.number || '?'} ${pin.name || '-'}</option>`;
+							if (selectedPins.has(idx)) {
+								selectedUnconnectedPins.push({ pin, idx });
+							} else {
+								otherUnconnectedPins.push({ pin, idx });
+							}
 						}
 					});
+
+					// 优先显示已勾选的引脚
+					if (selectedUnconnectedPins.length > 0) {
+						selectedUnconnectedPins.forEach(({ pin, idx }) => {
+							pinOptions += `<option value="${idx}">⭐ ${pin.number || '?'} ${pin.name || '-'} (已选)</option>`;
+						});
+					}
+
+					// 然后添加其他未连接的引脚
+					otherUnconnectedPins.forEach(({ pin, idx }) => {
+						pinOptions += `<option value="${idx}">${pin.number || '?'} ${pin.name || '-'}</option>`;
+					});
+
 					$('connectPowerPin').innerHTML = pinOptions;
 				});
 
